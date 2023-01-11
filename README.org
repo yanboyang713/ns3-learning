@@ -1,0 +1,5 @@
+
+* pre-install
+#+begin_src bash
+paru -S cmake python dpdk qt5-base openmpi sqlite libxml2 boost boost-libs glibe libpcap gsl gtk3 goocanvas python-gobject python-cairo python-pygraphviz ipython clang llvm castxml python-pygccxml python-cxxfilt python-setuptools python-pip python-wheel git mercurial doxygen graphviz imagemagick python-sphinx texlive-bin
+#+end_src
