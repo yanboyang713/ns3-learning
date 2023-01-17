@@ -35,6 +35,13 @@
 #include "ns3/packet-sink.h"
 #include "ns3/packet-sink-helper.h"
 #include "ns3/flow-monitor-module.h"
+#include "ns3/wifi-net-device.h"
+
+#include "ns3/config-store-module.h"
+#include "ns3/stats-module.h"
+
+#include <fstream>
+
 
 using namespace ns3;
 
@@ -110,6 +117,16 @@ private:
 Ptr<PacketSink> sink;                         /* Pointer to the packet sink application */
 uint64_t lastTotalRx = 0;                     /* The value of the last total received bytes */
 
+static void EnqueueTrace (std::string context, Ptr<const Packet> pkt){
+  std::cout << context << "\tTime: " << Simulator::Now() << " packet of Size: " << pkt->GetSize() << " enqueued!" << std::endl;
+
+}
+
+static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_t channelFreqMhz, WifiTxVector txVector,
+                         MpduInfo aMpdu, SignalNoiseDbm signalNoise, uint16_t staId) {
+  std::cout << context << std::endl;
+  std::cout << "Recv. Packet of size " << packet->GetSize() << " Signal= " << signalNoise.signal << " Noise= " << signalNoise.noise << std::endl;
+}
 
 static void CalculateThroughput (ApplicationContainer &sinkApps)
 //void CalculateThroughput ()
@@ -118,20 +135,13 @@ static void CalculateThroughput (ApplicationContainer &sinkApps)
   //std::cout << now.GetSeconds () << std::endl;
 
 
-  sink = StaticCast<PacketSink> (sinkApps.Get (3));
+  sink = StaticCast<PacketSink> (sinkApps.Get (0));
   double cur = (sink->GetTotalRx () - lastTotalRx) * (double) 8 / 1e5;     // Convert Application RX Packets to MBits.
   std::cout << now.GetSeconds () << "s: \t" << cur << " Mbit/s" << std::endl;
   lastTotalRx = sink->GetTotalRx ();
 
   //Simulator::Schedule (MilliSeconds (100), AodvExample::CalculateThroughput());
   Simulator::Schedule (MilliSeconds (100), &CalculateThroughput, sinkApps);
-
-
-
-
-
-
-
 
   return;
 }
@@ -216,6 +226,23 @@ void AodvExample::Run ()
 
   std::cout << "Starting simulation for " << totalTime << " s ...\n";
 
+  /*
+  // Use FileHelper to write out the packet byte count over time
+  FileHelper fileHelper;
+
+  // Configure the file to be written, and the formatting of output data.
+  fileHelper.ConfigureFile("yby-test-packet-byte-count", FileAggregator::FORMATTED);
+
+  // Set the labels for this formatted output file.
+  fileHelper.Set2dFormat("Time (Seconds) = %.3e\tPacket Byte Count = %.0f");
+
+  // Specify the probe type, trace source path (in configuration namespace), and
+  // probe output trace source ("OutputBytes") to write.
+  std::string probeType = "ns3::Ipv4PacketProbe";
+  std::string tracePath = "/NodeList/2/$ns3::Ipv4L3Protocol/Tx";
+  fileHelper.WriteProbe(probeType, tracePath, "OutputBytes");
+
+   */
   Simulator::Stop (Seconds (totalTime));
 
   FlowMonitorHelper flowmon;
@@ -223,11 +250,22 @@ void AodvExample::Run ()
   
   
 
-    
-  
-  
+  /*
+  // Output config store to txt format
+  Config::SetDefault("ns3::ConfigStore::Filename", StringValue("output-attributes.txt"));
+  Config::SetDefault("ns3::ConfigStore::FileFormat", StringValue("RawText"));
+  Config::SetDefault("ns3::ConfigStore::Mode", StringValue("Save"));
+  ConfigStore outputConfig2;
+  outputConfig2.ConfigureDefaults();
+  outputConfig2.ConfigureAttributes();
+   */
+
+
+  Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
 
   Simulator::Run ();
+
+  //Config::Connect ("/NodeList/*/DeviceList/*/TxQueue/Enqueue", MakeCallback (&EnqueueTrace));
 
   monitor->CheckForLostPackets ();
 
@@ -294,13 +332,17 @@ void AodvExample::CreateDevices ()
 {
   WifiMacHelper wifiMac;
   wifiMac.SetType ("ns3::AdhocWifiMac");
+  //wifiMac.SetType ("ns3::ApWifiMac");
+
   YansWifiPhyHelper wifiPhy;
-  //YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
-  YansWifiChannelHelper wifiChannel;
-  wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
-  wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel", "Frequency", DoubleValue (5e9));
+  YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
+  //YansWifiChannelHelper wifiChannel;
+  //wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
+  //wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel", "Frequency", DoubleValue (5e9));
   wifiPhy.SetChannel (wifiChannel.Create ());
   WifiHelper wifi;
+  wifi.SetStandard (WIFI_STANDARD_80211ac);
+
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate6Mbps"), "RtsCtsThreshold", UintegerValue (0));
   UAVdevices = wifi.Install (wifiPhy, wifiMac, UAVs);
   groundStationDevice = wifi.Install (wifiPhy, wifiMac, groundStation);
@@ -389,12 +431,14 @@ void AodvExample::InstallInternetStack () {
 
 void AodvExample::InstallApplications ()
 {
+  /*
   V4PingHelper ping (UAVinterfaces.GetAddress (2));
   ping.SetAttribute ("Verbose", BooleanValue (true));
 
   ApplicationContainer p = ping.Install (UAVs.Get (1));
   p.Start (Seconds (0));
   p.Stop (Seconds (totalTime) - Seconds (0.001));
+   */
 
   // Install TCP/UDP Transmitter on the station
 
@@ -409,11 +453,69 @@ void AodvExample::InstallApplications ()
   serverApps.Start (Seconds (0.1));
   serverApps.Stop (Seconds (totalTime) - Seconds (0.001));
   
+  ApplicationContainer sinkApps;
+  PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(Ipv4Address::GetAny (),port));
+  sinkApps.Add(sink.Install(groundStation.Get(0)));
+  sinkApps.Start (Seconds (0.2));
+  sinkApps.Stop (Seconds (totalTime) - Seconds (0.001));
 
+  /*
+  WifiPhy:
+  .AddTraceSource("PhyTxDrop",
+                            "Trace source indicating a packet "
+                            "has been dropped by the device during transmission",
+                            MakeTraceSourceAccessor(&WifiPhy::m_phyTxDropTrace),
+                            "ns3::Packet::TracedCallback")
+
+
+    .AddTraceSource("PhyRxDrop",
+                            "Trace source indicating a packet "
+                            "has been dropped by the device during reception",
+                            MakeTraceSourceAccessor(&WifiPhy::m_phyRxDropTrace),
+                            "ns3::Packet::TracedCallback")
+
+    .AddTraceSource("MonitorSnifferRx",
+                            "Trace source simulating a wifi device in monitor mode "
+                            "sniffing all received frames",
+                            MakeTraceSourceAccessor(&WifiPhy::m_phyMonitorSniffRxTrace),
+                            "ns3::WifiPhy::MonitorSnifferRxTracedCallback")
+    .AddTraceSource("MonitorSnifferTx",
+                            "Trace source simulating the capability of a wifi device "
+                            "in monitor mode to sniff all frames being transmitted",
+                            MakeTraceSourceAccessor(&WifiPhy::m_phyMonitorSniffTxTrace),
+                            "ns3::WifiPhy::MonitorSnifferTxTracedCallback");
+   */
+
+  //Simulator::Schedule (Seconds (1.1), &CalculateThroughput, sinkApps);
+  //
+  /*
+  std::cout << UAVs.GetN() << std::endl;
   
-  
-  
-  
+  for (uint32_t i=0 ; i< UAVs.GetN() ; i++){
+    Ptr<Node> node = UAVs.Get(i);
+    for (uint32_t j=0 ; j<node->GetNDevices() ; j++){
+      Ptr<NetDevice> device = node->GetDevice(j);
+
+      std::cout << "GetInstanceTypeId: " << device->GetInstanceTypeId() << std::endl;
+
+      if ( device->GetInstanceTypeId() == WifiNetDevice::GetTypeId() ){
+        Ptr<WifiNetDevice> wifi_dev = DynamicCast<WifiNetDevice>(device);
+        Ptr <WifiMac> mac = wifi_dev->GetMac ();
+
+
+        std::cout << "GetAttribute: " << mac->GetAttribute() << std::endl;
+        Ptr<RegularWifiMac> reg_mac = DynamicCast <RegularWifiMac> (mac);
+        if (reg_mac){
+          PointerValue val;
+          reg_mac->GetAttribute ("Txop", val); //val is passed by reference
+          Ptr <Txop> txop = DynamicCast <Txop> (val.GetObject ());
+          Ptr <WifiMacQueue> txop_queue = txop->GetWifiMacQueue ();
+          //txop_queue->SetMaxDelay ( MilliSeconds (250));
+        }
+      }
+    }
+  }
+  */
   
  // set packet sink
 
