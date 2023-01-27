@@ -1,5 +1,4 @@
-//./ns3 run "anomalyPrediction --pcap=false --printRoutes=true --numOfUAVs=3 --time=5 --step=15"
-
+//./ns3 run "anomalyPrediction --pcap=false --printRoutes=true --numOfUAVs=3 --time=5 --step=1 --EnableMonitor=true"
 #include <iostream>
 #include <fstream>
 
@@ -13,7 +12,8 @@
 #include "ns3/packet-sink-helper.h"
 
 #include "ns3/flow-monitor-module.h"
-//#include "ns3/wifi-net-device.h"
+#include "ns3/wifi-mac-queue.h"
+
 using namespace ns3;
 
 class anomalyPrediction{
@@ -77,17 +77,57 @@ class anomalyPrediction{
 
         void ShowFlowMonitor (FlowMonitorHelper &, Ptr<FlowMonitor> &);
 };
-
+static void PrintPacketInfo (Ptr <const Packet> packet){
+    std::cout << "Recv. Packet of size " << packet->GetSize() << std::endl;
+    std::cout << "UID: " << packet->GetUid() << std::endl;
+    packet->Print(std::cout);
+    return;
+}
 static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_t channelFreqMhz, WifiTxVector txVector,
                          MpduInfo aMpdu, SignalNoiseDbm signalNoise, uint16_t staId) {
 
     std::cout << "RX Packet Info" << std::endl;
     std::cout << context << std::endl;
-    std::cout << "Recv. Packet of size " << packet->GetSize() << " Signal= " << signalNoise.signal << " Noise= " << signalNoise.noise << std::endl;
+    std::cout << "Signal= " << signalNoise.signal << " Noise= " << signalNoise.noise << std::endl;
+
+    PrintPacketInfo (packet);
 
     return;
 }
 
+static void TxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_t channelFreqMhz,
+                         WifiTxVector txVector, MpduInfo aMpdu, uint16_t staId){
+
+    std::cout << "TX Packet Info" << std::endl;
+    std::cout << context << std::endl;
+    PrintPacketInfo (packet);
+
+    return;
+}
+static void DequeueTrace(std::string context, Ptr<const WifiMacQueueItem> item){
+    double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
+    std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
+
+    return;
+}
+//static void PhyTxDropInfo(std::string context, Ptr <const Packet> packet, WifiPhyRxfailureReason reason){
+static void PhyTxDropInfo(std::string context, Ptr <const Packet> packet){
+    std::cout << "TX Drop Info" << std::endl;
+    std::cout << context << std::endl;
+    PrintPacketInfo (packet);
+
+    return;
+}
+
+//static void PhyRxDropInfo(std::string context, Ptr <const Packet> packet){
+static void PhyRxDropInfo(std::string context, Ptr <const Packet> packet, WifiPhyRxfailureReason reason){
+    std::cout << "RX Drop Info" << std::endl;
+    std::cout << context << std::endl;
+    PrintPacketInfo (packet);
+    std::cout << "RX Drop Reason: " << reason << std::endl;
+
+    return;
+}
 int main (int argc, char **argv){
     anomalyPrediction main;
 
@@ -136,11 +176,12 @@ bool anomalyPrediction::Configure (int argc, char **argv)
 }
 
 void anomalyPrediction::ConfigConnect (){
-    std::cout << "Config Connect" << std::endl;
 
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
-
-    std::cout << "Config Connect END" << std::endl;
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
 
     return;
 }
@@ -160,9 +201,11 @@ void anomalyPrediction::Run (){
     FlowMonitorHelper flowmon;
     Ptr<FlowMonitor> monitor = flowmon.InstallAll();
 
-
     Simulator::Run ();
-    ShowFlowMonitor (flowmon, monitor);
+
+    if (enableFlowMonitor == true)
+        ShowFlowMonitor (flowmon, monitor);
+
     Simulator::Destroy ();
 
     return;
