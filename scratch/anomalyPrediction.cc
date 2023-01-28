@@ -104,12 +104,14 @@ static void TxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_
 
     return;
 }
+/*
 static void DequeueTrace(std::string context, Ptr<const WifiMacQueueItem> item){
     double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
     std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
 
     return;
 }
+ */
 //static void PhyTxDropInfo(std::string context, Ptr <const Packet> packet, WifiPhyRxfailureReason reason){
 static void PhyTxDropInfo(std::string context, Ptr <const Packet> packet){
     std::cout << "TX Drop Info" << std::endl;
@@ -146,7 +148,7 @@ anomalyPrediction::anomalyPrediction ():
     pcap (false),
     printRoutes (false),
     payloadSize (1472),
-    dataRate ("100Mbps"),
+    dataRate ("20Mbps"),
 
     enableFlowMonitor (false),
     port (9),
@@ -180,8 +182,8 @@ void anomalyPrediction::ConfigConnect (){
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
 
     return;
 }
@@ -278,15 +280,22 @@ void anomalyPrediction::CreateDevices () {
     wifiMac.SetType ("ns3::AdhocWifiMac");
 
     YansWifiPhyHelper wifiPhy;
-    YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
-    //YansWifiChannelHelper wifiChannel;
-    //wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
+    //YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
+    YansWifiChannelHelper wifiChannel;
+    wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
     //wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel", "Frequency", DoubleValue (5e9));
+    wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel", "Exponent", DoubleValue (2.0));
+
     wifiPhy.SetChannel (wifiChannel.Create ());
     WifiHelper wifi;
     wifi.SetStandard (WIFI_STANDARD_80211ac);
 
-    wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate6Mbps"), "RtsCtsThreshold", UintegerValue (0));
+    wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue ("VhtMcs9"),
+                                  "ControlMode", StringValue ("VhtMcs0")
+                                );
+    Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (20));
+
+    //wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate54Mbps"), "RtsCtsThreshold", UintegerValue (0));
     UAVdevices = wifi.Install (wifiPhy, wifiMac, UAVs);
     groundStationDevice = wifi.Install (wifiPhy, wifiMac, groundStation);
 
