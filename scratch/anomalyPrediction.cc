@@ -24,6 +24,13 @@ class anomalyPrediction{
         void Report (std::ostream & os);
 
     private:
+        double frequency; //< The operating frequency band in GHz: 2.4, 5 or 6
+        uint16_t channelWidth; //< The constant channel width in MHz (only for 11n/ac/ax)
+        uint16_t guardIntervalNs; //< The guard interval in nanoseconds (800 or 400 for 11n/ac, 800 or 1600 or 3200 for 11 ax)
+        uint16_t ChannelNumber;
+
+        std::string standard; ///< the 802.11 standard
+
         // Number of UAVs
         uint32_t numOfUAVs;
         // Distance between nodes, meters
@@ -41,10 +48,8 @@ class anomalyPrediction{
         //Application layer datarate
         std::string dataRate;
 
-        bool enableFlowMonitor = true;
-        uint16_t port = 9;   // Discard port (RFC 863)
-        uint32_t bytesTotal;      //!< Total received bytes.
-        uint32_t packetsReceived; //!< Total received packets.
+        bool enableFlowMonitor;
+        uint16_t port;   // Discard port (RFC 863)
 
         // UAVs network
         NodeContainer UAVs;
@@ -83,6 +88,7 @@ static void PrintPacketInfo (Ptr <const Packet> packet){
     packet->Print(std::cout);
     return;
 }
+
 static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_t channelFreqMhz, WifiTxVector txVector,
                          MpduInfo aMpdu, SignalNoiseDbm signalNoise, uint16_t staId) {
 
@@ -142,18 +148,21 @@ int main (int argc, char **argv){
 }
 
 anomalyPrediction::anomalyPrediction ():
+    frequency (6), //< The operating frequency band in GHz: 2.4, 5 or 6
+    channelWidth (160), //< The constant channel width in MHz (only for 11n/ac/ax)
+    guardIntervalNs (3200),
+    ChannelNumber (15),
+    standard("11ax"), ///< the 802.11 standard
     numOfUAVs (3),
     step (50),
     totalTime (100),
     pcap (false),
     printRoutes (false),
     payloadSize (1472),
-    dataRate ("20Mbps"),
+    dataRate ("500Mbps"),
 
     enableFlowMonitor (false),
-    port (9),
-    bytesTotal (0),
-    packetsReceived (0)
+    port (9)
 {
 }
 
@@ -172,6 +181,18 @@ bool anomalyPrediction::Configure (int argc, char **argv)
   cmd.AddValue ("payloadSize", "Payload size in bytes", payloadSize);
   cmd.AddValue ("dataRate", "Application data ate", dataRate);
   cmd.AddValue ("EnableMonitor", "Enable Flow Monitor", enableFlowMonitor);
+  //https://www.nsnam.org/docs/models/html/wifi-user.html#wifiphy-channelnumber
+  cmd.AddValue("ChannelNumber", "Set the operating channel number", ChannelNumber);
+  cmd.AddValue("frequency", "Set the operating frequency band in GHz: 2.4, 5 or 6", frequency);
+  cmd.AddValue("standard", "Set the standard (11a, 11b, 11g, 11n, 11ac, 11ax)", standard);
+  cmd.AddValue("channelWidth",
+               "Set the constant channel width in MHz (only for 11n/ac/ax)",
+               channelWidth);
+  cmd.AddValue("guardIntervalNs",
+               "Set the the guard interval in nanoseconds (800 or 400 for 11n/ac, 800 or 1600 or "
+               "3200 for 11 ax)",
+               guardIntervalNs);
+
   cmd.Parse (argc, argv);
 
   return true;
@@ -182,7 +203,7 @@ void anomalyPrediction::ConfigConnect (){
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
 
     return;
@@ -282,20 +303,128 @@ void anomalyPrediction::CreateDevices () {
     YansWifiPhyHelper wifiPhy;
     //YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
     YansWifiChannelHelper wifiChannel;
-    wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
-    //wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel", "Frequency", DoubleValue (5e9));
-    wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel", "Exponent", DoubleValue (2.0));
+    wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
+    if (frequency == 6){
+        // Reference Loss for Friss at 1 m with 6.0 GHz
+        wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel",
+                                       "Exponent",
+                                       DoubleValue(2.0),
+                                       "ReferenceDistance",
+                                       DoubleValue(1.0),
+                                       "ReferenceLoss",
+                                       DoubleValue(49.013));
+    } else if (frequency == 5){
+        // Reference Loss for Friss at 1 m with 5.15 GHz
+        wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel",
+                                       "Exponent",
+                                       DoubleValue(2.0),
+                                       "ReferenceDistance",
+                                       DoubleValue(1.0),
+                                       "ReferenceLoss",
+                                       DoubleValue(46.6777));
+    } else {
+        // Reference Loss for Friss at 1 m with 2.4 GHz
+        wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel",
+                                       "Exponent",
+                                       DoubleValue(2.0),
+                                       "ReferenceDistance",
+                                       DoubleValue(1.0),
+                                       "ReferenceLoss",
+                                       DoubleValue(40.046));
+    }
 
     wifiPhy.SetChannel (wifiChannel.Create ());
+    wifiPhy.Set ("Antennas", UintegerValue (4));
+    wifiPhy.Set ("MaxSupportedTxSpatialStreams", UintegerValue (4));
+    wifiPhy.Set ("MaxSupportedRxSpatialStreams", UintegerValue (4));
+
+
+    WifiStandard wifiStandard;
+    if (standard == "11a")
+    {
+        wifiStandard = WIFI_STANDARD_80211a;
+        frequency = 5;
+        channelWidth = 20;
+    }
+    else if (standard == "11b")
+    {
+        wifiStandard = WIFI_STANDARD_80211b;
+        frequency = 2.4;
+        channelWidth = 22;
+    }
+    else if (standard == "11g")
+    {
+        wifiStandard = WIFI_STANDARD_80211g;
+        frequency = 2.4;
+        channelWidth = 20;
+    }
+    else if (standard == "11n")
+    {
+        if (frequency == 2.4)
+        {
+            wifiStandard = WIFI_STANDARD_80211n;
+        }
+        else if (frequency == 5)
+        {
+            wifiStandard = WIFI_STANDARD_80211n;
+        }
+        else
+        {
+            NS_FATAL_ERROR("Unsupported frequency band " << frequency << " GHz for standard "
+                                                         << standard);
+        }
+    }
+    else if (standard == "11ac")
+    {
+        wifiStandard = WIFI_STANDARD_80211ac;
+        frequency = 5;
+    }
+    else if (standard == "11ax")
+    {
+        if (frequency == 2.4)
+        {
+            wifiStandard = WIFI_STANDARD_80211ax;
+        }
+        else if (frequency == 5)
+        {
+            wifiStandard = WIFI_STANDARD_80211ax;
+        }
+        else if (frequency == 6)
+        {
+            wifiStandard = WIFI_STANDARD_80211ax;
+        }
+        else
+        {
+            NS_FATAL_ERROR("Unsupported frequency band " << frequency << " GHz for standard "
+                                                         << standard);
+        }
+    }
+    else
+    {
+        NS_FATAL_ERROR("Unsupported standard: " << standard);
+    }
+
+
     WifiHelper wifi;
-    wifi.SetStandard (WIFI_STANDARD_80211ac);
+    wifi.SetStandard(wifiStandard);
+
+    //Channel Settings
+    std::string channelStr = "{" + std::to_string(ChannelNumber) + ", " + std::to_string(channelWidth) + ", BAND_" +
+                             (frequency == 2.4 ? "2_4" : (frequency == 5 ? "5" : "6")) + "GHZ, 0}";
+    Config::SetDefault("ns3::WifiPhy::ChannelSettings", StringValue(channelStr));
 
     wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue ("VhtMcs9"),
-                                  "ControlMode", StringValue ("VhtMcs0")
+                                  "ControlMode", StringValue ("VhtMcs4")
                                 );
-    Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (20));
 
-    //wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate54Mbps"), "RtsCtsThreshold", UintegerValue (0));
+    /*
+    wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue ("HeMcs10"),
+                                  "ControlMode", StringValue ("HeMcs10"),
+                                  "RtsCtsThreshold", UintegerValue (0)
+                                );
+    */
+
+
     UAVdevices = wifi.Install (wifiPhy, wifiMac, UAVs);
     groundStationDevice = wifi.Install (wifiPhy, wifiMac, groundStation);
 
