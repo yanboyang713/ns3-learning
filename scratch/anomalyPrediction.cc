@@ -321,7 +321,9 @@ void anomalyPrediction::CreateDevices () {
                                        "ReferenceDistance",
                                        DoubleValue(1.0),
                                        "ReferenceLoss",
-                                       DoubleValue(46.6777));
+                                       DoubleValue(46.6777)
+);
+
     } else {
         // Reference Loss for Friss at 1 m with 2.4 GHz
         wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel",
@@ -409,20 +411,20 @@ void anomalyPrediction::CreateDevices () {
     wifi.SetStandard(wifiStandard);
 
     //Channel Settings
+    //The primary20 index is the index of the primary 20 MHz channel within the operating channel
     std::string channelStr = "{" + std::to_string(ChannelNumber) + ", " + std::to_string(channelWidth) + ", BAND_" +
                              (frequency == 2.4 ? "2_4" : (frequency == 5 ? "5" : "6")) + "GHZ, 0}";
     Config::SetDefault("ns3::WifiPhy::ChannelSettings", StringValue(channelStr));
 
+    /*
     wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue ("VhtMcs9"),
-                                  "ControlMode", StringValue ("VhtMcs4")
+                                  "ControlMode", StringValue ("VhtMcs0")
                                 );
 
-    /*
-    wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue ("HeMcs10"),
-                                  "ControlMode", StringValue ("HeMcs10"),
-                                  "RtsCtsThreshold", UintegerValue (0)
-                                );
     */
+    wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue ("HeMcs11"),
+                                  "ControlMode", StringValue ("HeMcs0")
+                                );
 
 
     UAVdevices = wifi.Install (wifiPhy, wifiMac, UAVs);
