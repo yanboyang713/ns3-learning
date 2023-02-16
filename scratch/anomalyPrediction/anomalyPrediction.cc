@@ -1,6 +1,11 @@
-//./ns3 run "anomalyPrediction --pcap=false --printRoutes=true --numOfUAVs=3 --time=5 --step=1 --EnableMonitor=true"
+//CXX="clang++" CXXFLAGS_EXTRA="-lpqxx -lpq" ./ns3 configure
+//./ns3 run "anomalyPrediction --pcap=false --printRoutes=true --numOfUAVs=3 --time=5 --step=1 --EnableMonitor=true --hostname=test"
 #include <iostream>
 #include <fstream>
+#include <unistd.h>
+#include <ctime>
+#include <cstdlib>
+#include "sha256.h"
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -34,6 +39,13 @@ class anomalyPrediction{
 
         // The 802.11 standard
         std::string standard;
+        // Data Mode
+        std::string dataMode;
+        //Control Mode
+        std::string controlMode;
+
+        // Host Name
+        char hostname[1024];
 
         // Number of UAVs
         uint32_t numOfUAVs;
@@ -86,7 +98,12 @@ class anomalyPrediction{
         void InstallApplications ();
 
         void ShowFlowMonitor (FlowMonitorHelper &, Ptr<FlowMonitor> &);
+
+        void RunRecord ();
+
+        std::string generateRunID ();
 };
+
 static void PrintPacketInfo (Ptr <const Packet> packet){
     std::cout << "Recv. Packet of size " << packet->GetSize() << std::endl;
     std::cout << "UID: " << packet->GetUid() << std::endl;
@@ -141,6 +158,7 @@ static void PhyRxDropInfo(std::string context, Ptr <const Packet> packet, WifiPh
 
     return;
 }
+
 int main (int argc, char **argv){
     anomalyPrediction main;
 
@@ -150,6 +168,40 @@ int main (int argc, char **argv){
     main.Run ();
 
     return 0;
+}
+std::string anomalyPrediction::generateRunID (){
+    // current date/time based on current system
+    time_t now = time(0);
+	// Providing a seed value
+	srand(now);
+
+    int randomNum = rand();
+    std::string seed = std::to_string(randomNum) + hostname;
+
+    //http://www.zedwood.com/article/cpp-sha256-function
+    return sha256(seed);
+}
+void anomalyPrediction::RunRecord (){
+
+    std::string runID = generateRunID();
+    std::cout << "RunID: " << runID << std::endl;
+    std::cout << "Hostname: " << hostname << std::endl;
+
+    std::cout << "Data Mode: " << dataMode << std::endl;
+    std::cout << "Control Mode: " << controlMode << std::endl;
+
+    std::cout << "numOfUAVs: " << numOfUAVs << std::endl;
+    std::cout << "Simulation time: " << totalTime << std::endl;
+    std::cout << "Grid step (m): " << step << std::endl;
+    std::cout << "payloadSize (bytes)" << payloadSize << std::endl;
+    std::cout << "dataRate: " << dataRate << std::endl;
+    std::cout << "ChannelNumber: " << ChannelNumber << std::endl;
+    std::cout << "frequency: " << frequency << std::endl;
+    std::cout << "WIFI Standard: " << standard << std::endl;
+    std::cout << "channelWidth: " << channelWidth << std::endl;
+    std::cout << "guardIntervalNs: " << guardIntervalNs << std::endl;
+
+    return;
 }
 
 anomalyPrediction::anomalyPrediction ():
@@ -164,11 +216,17 @@ anomalyPrediction::anomalyPrediction ():
     pcap (false),
     printRoutes (false),
     payloadSize (1472),
-    dataRate ("500Mbps"),
+    dataRate ("700Mbps"),
+
+    dataMode ("HeMcs11"),
+    controlMode ("HeMcs0"),
 
     enableFlowMonitor (false),
     port (9)
 {
+    //Set Hostname
+    hostname[1023] = '\0';
+    gethostname(hostname, 1023);
 }
 
 bool anomalyPrediction::Configure (int argc, char **argv)
@@ -186,8 +244,13 @@ bool anomalyPrediction::Configure (int argc, char **argv)
   cmd.AddValue ("payloadSize", "Payload size in bytes", payloadSize);
   cmd.AddValue ("dataRate", "Application data ate", dataRate);
   cmd.AddValue ("EnableMonitor", "Enable Flow Monitor", enableFlowMonitor);
+  cmd.AddValue ("DataMode", "Data Mode", dataMode);
+  cmd.AddValue ("ControlMode", "Control Mode", controlMode);
+
+
   //https://www.nsnam.org/docs/models/html/wifi-user.html#wifiphy-channelnumber
   cmd.AddValue("ChannelNumber", "Set the operating channel number", ChannelNumber);
+  cmd.AddValue("hostname", "Set Hostname", hostname);
   cmd.AddValue("frequency", "Set the operating frequency band in GHz: 2.4, 5 or 6", frequency);
   cmd.AddValue("standard", "Set the standard (11a, 11b, 11g, 11n, 11ac, 11ax)", standard);
   cmd.AddValue("channelWidth",
@@ -214,6 +277,7 @@ void anomalyPrediction::ConfigConnect (){
     return;
 }
 void anomalyPrediction::Run (){
+    RunRecord ();
     CreateNodes ();
     SetMobilityModel ();
     CreateDevices ();
@@ -421,14 +485,8 @@ void anomalyPrediction::CreateDevices () {
                              (frequency == 2.4 ? "2_4" : (frequency == 5 ? "5" : "6")) + "GHZ, 0}";
     Config::SetDefault("ns3::WifiPhy::ChannelSettings", StringValue(channelStr));
 
-    /*
-    wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue ("VhtMcs9"),
-                                  "ControlMode", StringValue ("VhtMcs0")
-                                );
-
-    */
-    wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue ("HeMcs11"),
-                                  "ControlMode", StringValue ("HeMcs0")
+    wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue (dataMode),
+                                  "ControlMode", StringValue (controlMode )
                                 );
 
 
