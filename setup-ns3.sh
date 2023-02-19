@@ -5,6 +5,7 @@ current_dir=$(pwd)
 ns3_ver="3.37"
 ns3_folder="ns-allinone-${ns3_ver}"
 ns3_scratch="${current_dir}/${ns3_folder}/ns-${ns3_ver}/scratch"
+ns3_src="${current_dir}/${ns3_folder}/ns-${ns3_ver}/src"
 
 # download ns3 to current dir
 if [ ! -d "${current_dir}"/${ns3_folder} ]; then
@@ -31,3 +32,7 @@ cd "${current_dir}"/${ns3_folder} || return
 # link scratch in assets
 echo "Copying scratch to ns3..."
 ln -s -v "${current_dir}"/scratch/*.cc "${ns3_scratch}"/
+
+# link src in assets
+echo "Copying src to ns3..."
+ln -s -v "${current_dir}"/src/* "${ns3_src}"/

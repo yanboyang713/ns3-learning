@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <ctime>
 #include <cstdlib>
-#include "sha256.h"
-#include "database.h"
+#include "ns3/sha256.h"
+//#include "database.h"
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -80,7 +80,8 @@ class anomalyPrediction{
         Ipv4InterfaceContainer groundStationInterface;
 
         //database
-        database data;
+        //database data;
+
         //FlowMonitor
 
         // Create the nodes
