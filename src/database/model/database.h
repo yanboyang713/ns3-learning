@@ -22,6 +22,4 @@ class database{
 
 };
 
-//std::string sha256(std::string input);
-
 #endif

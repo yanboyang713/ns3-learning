@@ -82,7 +82,7 @@ class anomalyPrediction{
         //database
         //database data("dbname = anomalyprediction user = postgres password = password \
       //hostaddr = 127.0.0.1 port = 5432");
-        database data;
+        //database data;
 
         //FlowMonitor
 
@@ -166,6 +166,12 @@ static void PhyRxDropInfo(std::string context, Ptr <const Packet> packet, WifiPh
 }
 
 int main (int argc, char **argv){
+    database data;
+    bool succ = data.connect();
+    if (succ == true) {
+        std::cout << "database connect success" << std::endl;
+    }
+
     anomalyPrediction main;
 
 
