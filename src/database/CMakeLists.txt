@@ -10,7 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 FetchContent_Declare(
   libpqxx
   GIT_REPOSITORY https://github.com/jtv/libpqxx.git
-  GIT_TAG 3d97c80bcde96fb70a21c1ae1cf92ad934818210
+  #7.7.4
+  GIT_TAG 17e5a6c8ac3abc05329891aaa378bd6004b9c8ee
 )
 set(PQXX_LIBRARIES pqxx)
 
@@ -29,6 +30,6 @@ build_lib(
   LIBNAME database
   SOURCE_FILES ${source_files}
   HEADER_FILES ${header_files}
-  LIBRARIES_TO_LINK ${PQXX_LIBRARIES} pq
+  LIBRARIES_TO_LINK ${PQXX_LIBRARIES}
   #LIBRARIES_TO_LINK pqxx pq
 )
