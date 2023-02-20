@@ -31,7 +31,7 @@ cd "${current_dir}"/${ns3_folder} || return
 
 # link scratch in assets
 echo "Copying scratch to ns3..."
-ln -s -v "${current_dir}"/scratch/*.cc "${ns3_scratch}"/
+ln -s -v "${current_dir}"/scratch/* "${ns3_scratch}"/
 
 # link src in assets
 echo "Copying src to ns3..."
