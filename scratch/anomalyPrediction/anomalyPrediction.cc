@@ -80,6 +80,8 @@ class anomalyPrediction{
         Ipv4InterfaceContainer groundStationInterface;
 
         //database
+        //database data("dbname = anomalyprediction user = postgres password = password \
+      //hostaddr = 127.0.0.1 port = 5432");
         database data;
 
         //FlowMonitor
@@ -165,6 +167,7 @@ static void PhyRxDropInfo(std::string context, Ptr <const Packet> packet, WifiPh
 
 int main (int argc, char **argv){
     anomalyPrediction main;
+
 
     if (!main.Configure (argc, argv))
         NS_FATAL_ERROR ("Configuration failed. Aborted.");
@@ -281,6 +284,9 @@ void anomalyPrediction::ConfigConnect (){
     return;
 }
 void anomalyPrediction::Run (){
+
+    //std::cout << "database connect: " << data.connect() << std::endl;
+
     RunRecord ();
     CreateNodes ();
     SetMobilityModel ();

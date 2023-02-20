@@ -7,9 +7,17 @@ class database{
 
     private:
         std::string dbname;
+        std::string userName;
+        std::string password;
+        std::string hostAddress;
+        std::string port;
+
+        std::string url;
 
     public:
         database();
+        database(std::string url);
+        ~database();
         bool connect();
 
 };
