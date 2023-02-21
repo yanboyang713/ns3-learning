@@ -80,6 +80,8 @@ class anomalyPrediction{
         Ipv4InterfaceContainer groundStationInterface;
 
         //database
+
+        database dataOutput;
         //database data("dbname = anomalyprediction user = postgres password = password \
       //hostaddr = 127.0.0.1 port = 5432");
         //database data;
@@ -166,11 +168,6 @@ static void PhyRxDropInfo(std::string context, Ptr <const Packet> packet, WifiPh
 }
 
 int main (int argc, char **argv){
-    database data;
-    bool succ = data.connect();
-    if (succ == true) {
-        std::cout << "database connect success" << std::endl;
-    }
 
     anomalyPrediction main;
 
@@ -197,12 +194,13 @@ std::string anomalyPrediction::generateRunID (){
 void anomalyPrediction::RunRecord (){
 
     std::string runID = generateRunID();
+
+    /*
+    //Print Run Record out
     std::cout << "RunID: " << runID << std::endl;
     std::cout << "Hostname: " << hostname << std::endl;
-
     std::cout << "Data Mode: " << dataMode << std::endl;
     std::cout << "Control Mode: " << controlMode << std::endl;
-
     std::cout << "numOfUAVs: " << numOfUAVs << std::endl;
     std::cout << "Simulation time: " << totalTime << std::endl;
     std::cout << "Grid step (m): " << step << std::endl;
@@ -213,6 +211,15 @@ void anomalyPrediction::RunRecord (){
     std::cout << "WIFI Standard: " << standard << std::endl;
     std::cout << "channelWidth: " << channelWidth << std::endl;
     std::cout << "guardIntervalNs: " << guardIntervalNs << std::endl;
+    */
+
+    bool succ = dataOutput.runRecord(runID, hostname, dataMode, controlMode, numOfUAVs, totalTime, step, payloadSize, dataRate,
+                                     ChannelNumber, frequency, standard, channelWidth, guardIntervalNs);
+    if (succ == true){
+        std::cout << "Run Record Success!!!" << std::endl;
+    }else{
+        std::cout << "Run Record fail!!!" << std::endl;
+    }
 
     return;
 }
@@ -240,6 +247,13 @@ anomalyPrediction::anomalyPrediction ():
     //Set Hostname
     hostname[1023] = '\0';
     gethostname(hostname, 1023);
+
+    //connect database
+    bool succ = dataOutput.connect();
+    if (succ == true) {
+        std::cout << "database connect success" << std::endl;
+    }
+
 }
 
 bool anomalyPrediction::Configure (int argc, char **argv)
