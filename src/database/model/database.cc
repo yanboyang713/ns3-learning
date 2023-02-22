@@ -13,6 +13,7 @@ database::database():
 {
     std::cout << "Constructor Called" << std::endl;
     this->url = "dbname=" + dbname + " user=" + userName + " password=" + password + " hostaddr=" + hostAddress + " port=" + port;
+    //Also could be: pqxx::connection C{"postgresql://postgres:password@127.0.0.1:5432/anomalyprediction"};
 
     conn = new pqxx::connection(this->url);
 }
@@ -34,7 +35,7 @@ database::database(std::string dbname, std::string userName, std::string passwor
    this->port = port;
 
    this->url = "dbname=" + dbname + " user=" + userName + " password=" + password + " hostaddr=" + hostAddress + " port=" + port;
-
+   //Also could be: pqxx::connection C{"postgresql://postgres:password@127.0.0.1:5432/anomalyprediction"};
    conn = new pqxx::connection(this->url);
 
 }
@@ -58,30 +59,11 @@ pqxx::connection * database::getConnection() {
     //if its not open
     if ( not conn->is_open() ){
        conn = new pqxx::connection(this->url);
+       std::cout << "Can't open database" << std::endl;
     } else {
        std::cout << "Opened database successfully: " << conn->dbname() << std::endl;
     }
     return conn;
-}
-
-bool database::connect(){
-
-   try {
-      connection databaseConnector("dbname=" + dbname + " user=" + userName + " password=" + password + " hostaddr=" + hostAddress + " port=" + port);
-      //Also could be: pqxx::connection C{"postgresql://postgres:password@127.0.0.1:5432/anomalyprediction"};
-
-      if ( databaseConnector.is_open()) {
-         std::cout << "Opened database successfully: " <<  databaseConnector.dbname() << std::endl;
-      } else {
-         std::cout << "Can't open database" << std::endl;
-         return false;
-      }
-      databaseConnector.close ();
-   } catch (const std::exception &e) {
-      std::cerr << "database cerr: " << e.what() << std::endl;
-      return false;
-   }
-   return true;
 }
 
 bool database::runRecord (std::string runID, char hostname[1024], std::string dataMode, std::string controlMode, uint32_t numOfNodes,
@@ -107,6 +89,16 @@ bool database::runRecord (std::string runID, char hostname[1024], std::string da
    */
    try {
       // Handle pqxx database business here
+      // Create SQL statement
+      std::string sql = "INSERT INTO runrecord (runid, hostname) "  \
+         "VALUES (' " + runID + " ', ' " + hostname + " ');";
+
+      /* Create a transactional object. */
+      work W(*conn);
+
+      /* Execute SQL query */
+      W.exec( sql );
+      W.commit();
    }
    catch (const std::exception &e) {
       std::cerr << "database cerr: " << e.what() << std::endl;

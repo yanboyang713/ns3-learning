@@ -18,17 +18,13 @@ class database{
 
         pqxx::connection * conn = nullptr;
 
-        void reset();
-
     public:
         database();
         database(std::string);
         database(std::string, std::string, std::string, std::string, std::string);
         ~database();
-        bool connect();
         pqxx::connection * getConnection();
         bool runRecord (std::string, char [1024], std::string, std::string, uint32_t, double, double, uint32_t, std::string,
                         uint16_t, double, std::string, uint16_t, uint16_t);
 };
-
 #endif
