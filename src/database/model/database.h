@@ -1,7 +1,8 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 #include <string>
-
+#include <cstring>
+#include <pqxx/pqxx>
 class database{
     //protected:
 

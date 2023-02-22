@@ -1,6 +1,5 @@
 #include "database.h"
-#include <cstring>
-#include <pqxx/pqxx>
+//#include <cstring>
 
 using namespace pqxx;
 

@@ -1,4 +1,4 @@
-//CXX="clang++" LDFLAGS="-lpqxx -lpq" ./ns3 configure
+//CXX="clang++" LDFLAGS="-lpqxx -lpq" ./ns3 configure --cxx-standard 17
 //./ns3 run "anomalyPrediction --pcap=false --printRoutes=true --numOfUAVs=3 --time=5 --step=1 --EnableMonitor=true --hostname=test"
 #include <iostream>
 #include <fstream>
