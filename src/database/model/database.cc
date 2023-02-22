@@ -12,16 +12,56 @@ database::database():
 
 {
     std::cout << "Constructor Called" << std::endl;
-    //bool databaseConnect = connect();
+    this->url = "dbname=" + dbname + " user=" + userName + " password=" + password + " hostaddr=" + hostAddress + " port=" + port;
+
+    conn = new pqxx::connection(this->url);
+}
+
+database::database(std::string dbname, std::string userName, std::string password, std::string hostAddress, std::string port):
+   dbname("anomalyprediction"),
+   userName("postgres"),
+   password("password"),
+   hostAddress("127.0.0.1"),
+   port("5432")
+
+{
+   std::cout << "Constructor with Args Called" << std::endl;
+
+   this->dbname = dbname;
+   this->userName = userName;
+   this->password = password;
+   this->hostAddress = hostAddress;
+   this->port = port;
+
+   this->url = "dbname=" + dbname + " user=" + userName + " password=" + password + " hostaddr=" + hostAddress + " port=" + port;
+
+   conn = new pqxx::connection(this->url);
+
 }
 
 database::database(std::string url) {
-
+    this->url = url;
+    conn = new pqxx::connection(url);
 }
 
 database::~database(){
     std::cout << "De-constructor Called" << std::endl;
 
+    conn->close ();
+    if (conn != nullptr) {
+        delete conn;
+        conn = nullptr;
+    }
+}
+
+pqxx::connection * database::getConnection() {
+    //if its not open
+    if ( not conn->is_open() ){
+       conn = new pqxx::connection(this->url);
+    } else {
+       std::cout << "Opened database successfully: " << conn->dbname() << std::endl;
+    }
+    return conn;
 }
 
 bool database::connect(){
@@ -65,7 +105,12 @@ bool database::runRecord (std::string runID, char hostname[1024], std::string da
    std::cout << "channelWidth: " << channelWidth << std::endl;
    std::cout << "guardIntervalNs: " << guardIntervalNs << std::endl;
    */
-
+   try {
+      // Handle pqxx database business here
+   }
+   catch (const std::exception &e) {
+      std::cerr << "database cerr: " << e.what() << std::endl;
+      return false;
+   }
    return true;
-
 }

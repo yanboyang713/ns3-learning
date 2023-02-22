@@ -171,7 +171,6 @@ int main (int argc, char **argv){
 
     anomalyPrediction main;
 
-
     if (!main.Configure (argc, argv))
         NS_FATAL_ERROR ("Configuration failed. Aborted.");
 
@@ -249,10 +248,7 @@ anomalyPrediction::anomalyPrediction ():
     gethostname(hostname, 1023);
 
     //connect database
-    bool succ = dataOutput.connect();
-    if (succ == true) {
-        std::cout << "database connect success" << std::endl;
-    }
+    pqxx::connection * conn =  dataOutput.getConnection();
 
 }
 
@@ -304,8 +300,6 @@ void anomalyPrediction::ConfigConnect (){
     return;
 }
 void anomalyPrediction::Run (){
-
-    //std::cout << "database connect: " << data.connect() << std::endl;
 
     RunRecord ();
     CreateNodes ();
