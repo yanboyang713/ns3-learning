@@ -24,7 +24,7 @@ class database{
         database(std::string, std::string, std::string, std::string, std::string);
         ~database();
         pqxx::connection * getConnection();
-        bool runRecord (std::string, char [1024], std::string, std::string, uint32_t, double, double, uint32_t, std::string,
+        bool runRecord (std::string, char [1024], std::string, std::string, uint32_t, double, uint32_t, std::string,
                         uint16_t, double, std::string, uint16_t, uint16_t);
 };
 #endif

@@ -212,7 +212,7 @@ void anomalyPrediction::RunRecord (){
     std::cout << "guardIntervalNs: " << guardIntervalNs << std::endl;
     */
 
-    bool succ = dataOutput.runRecord(runID, hostname, dataMode, controlMode, numOfUAVs, totalTime, step, payloadSize, dataRate,
+    bool succ = dataOutput.runRecord(runID, hostname, dataMode, controlMode, numOfUAVs, totalTime, payloadSize, dataRate,
                                      ChannelNumber, frequency, standard, channelWidth, guardIntervalNs);
     if (succ == true){
         std::cout << "Run Record Success!!!" << std::endl;

@@ -67,9 +67,8 @@ pqxx::connection * database::getConnection() {
 }
 
 bool database::runRecord (std::string runID, char hostname[1024], std::string dataMode, std::string controlMode, uint32_t numOfNodes,
-                          double totalTime, double step, uint32_t payloadSize, std::string dataRate, uint16_t ChannelNumber,
+                          double simulationTime, uint32_t payloadSize, std::string dataRate, uint16_t channelNumber,
                           double frequency, std::string standard, uint16_t channelWidth, uint16_t guardIntervalNs){
-
    /*
    //Print agus out
    std::cout << "RunID: " << runID << std::endl;
@@ -77,21 +76,19 @@ bool database::runRecord (std::string runID, char hostname[1024], std::string da
    std::cout << "Data Mode: " << dataMode << std::endl;
    std::cout << "Control Mode: " << controlMode << std::endl;
    std::cout << "Num Of Nodes: " << numOfNodes<< std::endl;
-   std::cout << "Simulation time: " << totalTime << std::endl;
-   std::cout << "Grid step (m): " << step << std::endl;
+   std::cout << "Simulation time: " << simulationTime << std::endl;
    std::cout << "payloadSize (bytes)" << payloadSize << std::endl;
    std::cout << "dataRate: " << dataRate << std::endl;
-   std::cout << "ChannelNumber: " << ChannelNumber << std::endl;
+   std::cout << "ChannelNumber: " << channelNumber << std::endl;
    std::cout << "frequency: " << frequency << std::endl;
    std::cout << "WIFI Standard: " << standard << std::endl;
    std::cout << "channelWidth: " << channelWidth << std::endl;
    std::cout << "guardIntervalNs: " << guardIntervalNs << std::endl;
    */
    try {
-      // Handle pqxx database business here
       // Create SQL statement
-      std::string sql = "INSERT INTO runrecord (runid, hostname) "  \
-         "VALUES (' " + runID + " ', ' " + hostname + " ');";
+      std::string sql = "INSERT INTO runrecord (runid, hostname, datamode, controlmode,  numofnodes, simulationtime, payloadsize, datarate, channelnumber, frequency, standard, channelwidth, guardinterval ) "  \
+         "VALUES (' " + runID + " ', ' " + hostname + " ', ' " + dataMode + " ', ' " + controlMode + " ', ' " + std::to_string(numOfNodes) + " ', ' " + std::to_string(simulationTime) + " ', ' " + std::to_string(payloadSize) + " ', ' " + dataRate + " ', ' " + std::to_string(channelNumber) + " ', ' " + std::to_string(frequency) + " ', ' " + standard + " ', ' " + std::to_string(channelWidth) + " ', ' " + std::to_string(guardIntervalNs) + " ');";
 
       /* Create a transactional object. */
       work W(*conn);
