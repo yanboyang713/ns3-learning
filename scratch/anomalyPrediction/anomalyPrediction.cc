@@ -165,13 +165,18 @@ Mac48Address contextToMac(std::string context) {
 static void PrintPacketInfo (Ptr <const Packet> packet){
     std::cout << "Recv. Packet of size " << packet->GetSize() << std::endl;
     std::cout << "UID: " << packet->GetUid() << std::endl;
-    packet->Print(std::cout);
     return;
 }
 
 static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_t channelFreqMhz, WifiTxVector txVector,
                          MpduInfo aMpdu, SignalNoiseDbm signalNoise, uint16_t staId) {
-    std::cout << "Time: "<< Simulator::Now ().GetSeconds() << std::endl;
+
+    std::cout << "Milli Seconds: "<< Simulator::Now().GetMilliSeconds() << std::endl;
+    std::cout << "Seconds: "<< Simulator::Now().GetSeconds() << std::endl;
+    std::cout << "Minutes: "<< Simulator::Now().GetMinutes() << std::endl;
+    std::cout << "Hours: "<< Simulator::Now().GetHours() << std::endl;
+
+
     std::cout << "RX Packet Info" << std::endl;
     std::cout << context << std::endl;
     std::cout << "node ID: " << contextToNodeId(context) << std::endl;
@@ -348,7 +353,7 @@ bool anomalyPrediction::Configure (int argc, char **argv)
 
 void anomalyPrediction::ConfigConnect (){
 
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
