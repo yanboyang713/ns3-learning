@@ -1,4 +1,4 @@
-//CXX="clang++" LDFLAGS="-lpqxx -lpq" ./ns3 configure --cxx-standard 17
+//CXX="clang++" ./ns3 configure --cxx-standard 17
 //./ns3 run "anomalyPrediction --pcap=false --printRoutes=true --numOfUAVs=3 --time=5 --step=1 --EnableMonitor=true --hostname=test"
 #include <iostream>
 #include <fstream>
@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include "ns3/sha256.h"
 #include "ns3/database.h"
+#include "ns3/nodeInfo.h"
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -30,6 +31,9 @@ class anomalyPrediction{
         void Report (std::ostream & os);
 
     private:
+        //record all nodes info
+        nodeInfo nodesRecords;
+
         //The operating frequency band in GHz: 2.4, 5 or 6
         double frequency;
         //The constant channel width in MHz (only for 11n/ac/ax)
@@ -110,7 +114,53 @@ class anomalyPrediction{
         void RunRecord ();
 
         std::string generateRunID ();
+
+
+        nodeInfo * getNodesRecords();
+
 };
+uint32_t getNodeID(Ptr<Node> node){
+    //Ptr<Node> node = NodeList::GetNode(nodeId);
+}
+/**
+ * Parse context strings of the form "/NodeList/x/DeviceList/x/..." to extract the NodeId integer
+ *
+ * \param context The context to parse.
+ * \return the NodeId
+ */
+uint32_t contextToNodeId(std::string context) {
+    std::string sub = context.substr(10);
+    uint32_t pos = sub.find("/Device");
+
+    uint32_t nodeId = std::stoi(sub.substr(0, pos));
+
+    return nodeId;
+}
+
+/**
+ * Parse context strings of the form "/NodeList/x/DeviceList/x/..." and fetch the Mac address
+ *
+ * \param context The context to parse.
+ * \return the device MAC address
+ */
+/*
+Mac48Address contextToMac(std::string context) {
+    std::string sub = context.substr(10);
+    uint32_t pos = sub.find("/Device");
+    uint32_t nodeId = std::stoi(sub.substr(0, pos));
+    Ptr<Node> n = NodeList::GetNode(nodeId);
+    Ptr<WifiNetDevice> d;
+    for (uint32_t i = 0; i < n->GetNDevices(); i++)
+    {
+        d = n->GetDevice(i)->GetObject<WifiNetDevice>();
+        if (d)
+        {
+            break;
+        }
+    }
+    return Mac48Address::ConvertFrom(d->GetAddress());
+}
+*/
 
 static void PrintPacketInfo (Ptr <const Packet> packet){
     std::cout << "Recv. Packet of size " << packet->GetSize() << std::endl;
@@ -121,9 +171,11 @@ static void PrintPacketInfo (Ptr <const Packet> packet){
 
 static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_t channelFreqMhz, WifiTxVector txVector,
                          MpduInfo aMpdu, SignalNoiseDbm signalNoise, uint16_t staId) {
-
+    std::cout << "Time: "<< Simulator::Now ().GetSeconds() << std::endl;
     std::cout << "RX Packet Info" << std::endl;
     std::cout << context << std::endl;
+    std::cout << "node ID: " << contextToNodeId(context) << std::endl;
+
     std::cout << "Signal= " << signalNoise.signal << " Noise= " << signalNoise.noise << std::endl;
 
     PrintPacketInfo (packet);
@@ -178,6 +230,11 @@ int main (int argc, char **argv){
 
     return 0;
 }
+
+nodeInfo * anomalyPrediction::getNodesRecords(){
+    return &nodesRecords;
+}
+
 std::string anomalyPrediction::generateRunID (){
     // current date/time based on current system
     time_t now = time(0);
@@ -350,6 +407,7 @@ void anomalyPrediction::ShowFlowMonitor (FlowMonitorHelper &flowmon, Ptr<FlowMon
 
     return;
 }
+
 void anomalyPrediction::CreateNodes () {
     //Creating UAVs and Ground Station
     std::cout << "Creating " << (unsigned)numOfUAVs << " UAVs " << std::endl;
@@ -359,15 +417,20 @@ void anomalyPrediction::CreateNodes () {
         std::ostringstream os;
         os << "UAV-" << i;
         Names::Add (os.str (), UAVs.Get (i));
-    }
 
+        nodesRecords.insertName(UAVs.Get(i)->GetId(), os.str());
+        std::cout << "name: " << os.str() << " ID: " << UAVs.Get(i)->GetId() << std::endl;
+    }
 
     std::cout << "Creating " << "Ground Station" << std::endl;
     groundStation.Create (1);
 
     //Name Ground Station
     std::string groundStationName = "Ground-Station";
-    Names::Add (groundStationName, groundStation.Get (0));
+    Names::Add (groundStationName, groundStation.Get(0));
+
+    nodesRecords.insertName(groundStation.Get(0)->GetId(), groundStationName);
+    std::cout << "name: " <<  groundStationName << " ID: " << groundStation.Get(0)->GetId() << std::endl;
 
     return;
 }
