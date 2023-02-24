@@ -11,7 +11,7 @@ nodeInfo::~nodeInfo(){
 
 bool nodeInfo::insertName(int ID, std::string name){
 
-    std::map<int, node> nodes;
+    //std::map<int, node> nodes;
 
     std::map<int, node>::iterator it;
     it = nodes.find(ID);
@@ -30,7 +30,8 @@ bool nodeInfo::insertName(int ID, std::string name){
 }
 
 std::string nodeInfo::getName (int ID){
-
+    return nodes.find(ID)->second.name;
+    //std::cout << "a => " << mymap.find('a')->second << '\n';
 }
 
 bool nodeInfo::updateXlocation(int ID, double location){

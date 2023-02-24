@@ -103,3 +103,48 @@ bool database::runRecord (std::string runID, char hostname[1024], std::string da
    }
    return true;
 }
+
+bool database::RxPacketInfoRecord(std::string runID, char hostname[1024], std::string type, std::string timeString,
+                                  std::string context, std::string nodeName, uint32_t nodeID, double signalDB,
+                                  double noiseDB, uint16_t channelFreqMhz, uint8_t ness, uint8_t nss, uint8_t powerLevel,
+                                  uint32_t packetSize, uint64_t packetUID){
+   /*
+   std::cout << "Run ID: " << runID << std::endl;
+   std::cout << "Hostname" << hostname << std::endl;
+   std::cout << "type: " << type << std::endl;
+   std::cout << "timeString: " << timeString << std::endl;
+   std::cout << "context: " << context << std::endl;
+   std::cout << "nodeName: " << nodeName << std::endl;
+   std::cout << "nodeID: " << nodeID << std::endl;
+   std::cout << "signalDB: " << signalDB << std::endl;
+   std::cout << "noiseDB: " << noiseDB << std::endl;
+   std::cout << "channelFreqMhz: " << channelFreqMhz << std::endl;
+   std::cout << "ness: " << ness << std::endl;
+   std::cout << "nss: " << nss << std::endl;
+   std::cout << "powerLevel: " << powerLevel << std::endl;
+   std::cout << "packetSize: " <<  packetSize << std::endl;
+   std::cout << "packetUID: " <<  packetUID << std::endl;
+
+   */
+
+   try {
+      // Create SQL statement
+      std::string sql = "INSERT INTO rxpacketinfo (runid, hostname, type, time, context, nodename, nodeid, signaldb, noisedb, channelfreqmhz, ness, nss, powerlevel, packetsize, packetuid) "  \
+         "VALUES (' " + runID + " ', ' " + hostname + " ', ' " + type + " ', ' " + timeString + " ', ' " + context + " ', ' " + nodeName + " ', ' " + std::to_string(nodeID) + " ', ' " + std::to_string(signalDB) + " ', ' " + std::to_string(noiseDB) + " ', ' " + std::to_string(channelFreqMhz) + " ', ' " + std::to_string(ness) + " ', ' " + std::to_string(nss) + " ', ' " + std::to_string(powerLevel) + " ', ' " + std::to_string(packetSize) + " ', ' " + std::to_string(packetUID) + " ');";
+
+      /* Create a transactional object. */
+      work W(*conn);
+
+      /* Execute SQL query */
+      W.exec( sql );
+      W.commit();
+   }
+   catch (const std::exception &e) {
+      std::cerr << "database cerr: " << e.what() << std::endl;
+      return false;
+   }
+
+   return true;
+}
+    //(type, time.timeString, context, nodesRecords.getName(contextToNodeId(context)), contextToNodeId(context), signalNoise.signal, signalNoise.noise, channelFreqMhz, vector.ness, vector.nss, vector.powerLevel)
+    //(std::string, std::string, std::string, std::string, uint32_t, double, double, uint16_t, uint8_t, uint8_t, uint8_t)

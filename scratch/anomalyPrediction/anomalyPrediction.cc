@@ -5,6 +5,11 @@
 #include <unistd.h>
 #include <ctime>
 #include <cstdlib>
+//Ceil and Floor functions
+#include <cmath>
+//std::setw() std::setfill()
+#include <iomanip>
+
 #include "ns3/sha256.h"
 #include "ns3/database.h"
 #include "ns3/nodeInfo.h"
@@ -23,6 +28,16 @@
 
 using namespace ns3;
 
+//global vars
+//record all nodes info
+nodeInfo nodesRecords;
+//database
+database dataOutput;
+//run ID
+std::string runID;
+// Host Name
+char hostname[1024];
+
 class anomalyPrediction{
     public:
         anomalyPrediction ();
@@ -31,8 +46,6 @@ class anomalyPrediction{
         void Report (std::ostream & os);
 
     private:
-        //record all nodes info
-        nodeInfo nodesRecords;
 
         //The operating frequency band in GHz: 2.4, 5 or 6
         double frequency;
@@ -48,9 +61,6 @@ class anomalyPrediction{
         std::string dataMode;
         //Control Mode
         std::string controlMode;
-
-        // Host Name
-        char hostname[1024];
 
         // Number of UAVs
         uint32_t numOfUAVs;
@@ -83,13 +93,6 @@ class anomalyPrediction{
         NetDeviceContainer groundStationDevice;
         Ipv4InterfaceContainer groundStationInterface;
 
-        //database
-
-        database dataOutput;
-        //database data("dbname = anomalyprediction user = postgres password = password \
-      //hostaddr = 127.0.0.1 port = 5432");
-        //database data;
-
         //FlowMonitor
 
         // Create the nodes
@@ -115,13 +118,7 @@ class anomalyPrediction{
 
         std::string generateRunID ();
 
-
-        nodeInfo * getNodesRecords();
-
 };
-uint32_t getNodeID(Ptr<Node> node){
-    //Ptr<Node> node = NodeList::GetNode(nodeId);
-}
 /**
  * Parse context strings of the form "/NodeList/x/DeviceList/x/..." to extract the NodeId integer
  *
@@ -137,30 +134,18 @@ uint32_t contextToNodeId(std::string context) {
     return nodeId;
 }
 
-/**
- * Parse context strings of the form "/NodeList/x/DeviceList/x/..." and fetch the Mac address
- *
- * \param context The context to parse.
- * \return the device MAC address
- */
-/*
-Mac48Address contextToMac(std::string context) {
-    std::string sub = context.substr(10);
-    uint32_t pos = sub.find("/Device");
-    uint32_t nodeId = std::stoi(sub.substr(0, pos));
-    Ptr<Node> n = NodeList::GetNode(nodeId);
-    Ptr<WifiNetDevice> d;
-    for (uint32_t i = 0; i < n->GetNDevices(); i++)
-    {
-        d = n->GetDevice(i)->GetObject<WifiNetDevice>();
-        if (d)
-        {
-            break;
-        }
-    }
-    return Mac48Address::ConvertFrom(d->GetAddress());
+struct packetInfo {
+    uint32_t size;
+    uint64_t UID;
+};
+
+packetInfo setPacketinfo (Ptr <const Packet> packet){
+    packetInfo packetInfo;
+    packetInfo.size = packet->GetSize();
+    packetInfo.UID = packet->GetUid();
+
+    return packetInfo;
 }
-*/
 
 static void PrintPacketInfo (Ptr <const Packet> packet){
     std::cout << "Recv. Packet of size " << packet->GetSize() << std::endl;
@@ -168,22 +153,101 @@ static void PrintPacketInfo (Ptr <const Packet> packet){
     return;
 }
 
+struct timeFormat {
+    std::string millis;
+    std::string seconds;
+    std::string minutes;
+    std::string hours;
+    std::string timeString;
+};
+
+std::string padLeadingZeros(int number){
+    std::ostringstream ss;
+    ss << std::setw(2) << std::setfill('0') << number;
+    return ss.str();
+}
+
+timeFormat timeGenerate(){
+    timeFormat time;
+
+    //std::cout << "Milli Seconds: "<< Simulator::Now().GetMilliSeconds() << std::endl;
+    int millis = floor(Simulator::Now().GetMilliSeconds());
+    time.millis =  padLeadingZeros(millis);
+    //std::cout << "Milli Seconds: "<< time.millis << std::endl;
+
+    //std::cout << "Seconds: "<< Simulator::Now().GetSeconds() << std::endl;
+    int seconds = floor(Simulator::Now().GetSeconds());
+    time.seconds = padLeadingZeros(seconds);
+    //std::cout << "Seconds: "<< time.seconds << std::endl;
+
+    //std::cout << "Minutes: "<< Simulator::Now().GetMinutes() << std::endl;
+    int minutes = floor(Simulator::Now().GetMinutes());
+    time.minutes  = padLeadingZeros(minutes);
+    //std::cout << "Minutes: "<< time.minutes << std::endl;
+
+    //std::cout << "Hours: "<< Simulator::Now().GetHours() << std::endl;
+    int hours = floor(Simulator::Now().GetHours());
+    time.hours = padLeadingZeros(hours);
+    //std::cout << "Hours: "<< time.hours << std::endl;
+
+    time.timeString = time.hours + ":" + time.minutes + ":" + time.seconds + "." + time.millis;
+    //std::cout << "time string: " << time.timeString << std::endl;
+
+    return time;
+}
+
+struct wifiVector {
+    uint8_t ness;
+    uint8_t nss;
+    uint8_t powerLevel;
+};
+
+wifiVector setWifiVector(ns3::WifiTxVector txVector) {
+    wifiVector vector;
+
+    //the number of Ness
+    vector.ness = txVector.GetNess();
+    //the number of Nss
+    vector.nss = txVector.GetNss();
+    //the transmission power level
+    vector.powerLevel = txVector.GetTxPowerLevel();
+
+    return vector;
+}
+
 static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_t channelFreqMhz, WifiTxVector txVector,
                          MpduInfo aMpdu, SignalNoiseDbm signalNoise, uint16_t staId) {
+    //std::cout << "RX Packet Info" << std::endl;
+    std::string type = "RxPacketInfo";
 
-    std::cout << "Milli Seconds: "<< Simulator::Now().GetMilliSeconds() << std::endl;
-    std::cout << "Seconds: "<< Simulator::Now().GetSeconds() << std::endl;
-    std::cout << "Minutes: "<< Simulator::Now().GetMinutes() << std::endl;
-    std::cout << "Hours: "<< Simulator::Now().GetHours() << std::endl;
+    timeFormat time = timeGenerate();
+    //std::cout << "time string: " << time.timeString << std::endl;
+    //std::cout << "context: " << context << std::endl;
+    //std::cout << "node Name: " << nodesRecords.getName(contextToNodeId(context)) << std::endl;
+    //std::cout << "node ID: " << contextToNodeId(context) << std::endl;
+    //std::cout << "Signal= " << signalNoise.signal << " Noise= " << signalNoise.noise << std::endl;
+    //std::cout << "channelFreqMhz: " << channelFreqMhz << std::endl;
+
+    wifiVector vector;
+    vector = setWifiVector(txVector);
+
+    //std::cout << "ness: " << vector.ness << std::endl;
+    //std::cout << "nss: " << vector.nss << std::endl;
+    //std::cout << "powerLevel: " << vector.powerLevel << std::endl;
+
+    packetInfo packetResult = setPacketinfo (packet);
+    std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
 
 
-    std::cout << "RX Packet Info" << std::endl;
-    std::cout << context << std::endl;
-    std::cout << "node ID: " << contextToNodeId(context) << std::endl;
-
-    std::cout << "Signal= " << signalNoise.signal << " Noise= " << signalNoise.noise << std::endl;
-
-    PrintPacketInfo (packet);
+    bool succ = dataOutput.RxPacketInfoRecord(runID, hostname, type, time.timeString, context, nodesRecords.getName(contextToNodeId(context)),
+                                     contextToNodeId(context), signalNoise.signal, signalNoise.noise, channelFreqMhz,
+                                     vector.ness, vector.nss, vector.powerLevel, packetResult.size, packetResult.UID);
+    if (succ == true){
+        std::cout << "Rx Packet Info Record Success!!!" << std::endl;
+    }else{
+        std::cout << "Rx Packet Info Record fail!!!" << std::endl;
+    }
 
     return;
 }
@@ -236,10 +300,6 @@ int main (int argc, char **argv){
     return 0;
 }
 
-nodeInfo * anomalyPrediction::getNodesRecords(){
-    return &nodesRecords;
-}
-
 std::string anomalyPrediction::generateRunID (){
     // current date/time based on current system
     time_t now = time(0);
@@ -254,7 +314,7 @@ std::string anomalyPrediction::generateRunID (){
 }
 void anomalyPrediction::RunRecord (){
 
-    std::string runID = generateRunID();
+    runID = generateRunID();
 
     /*
     //Print Run Record out
