@@ -9,6 +9,7 @@
 #include <cmath>
 //std::setw() std::setfill()
 #include <iomanip>
+#include <chrono>
 
 #include "ns3/sha256.h"
 #include "ns3/database.h"
@@ -154,44 +155,90 @@ static void PrintPacketInfo (Ptr <const Packet> packet){
 }
 
 struct timeFormat {
-    std::string millis;
+    std::string micro;
     std::string seconds;
     std::string minutes;
     std::string hours;
+    std::string year;
+    std::string month;
+    std::string day;
     std::string timeString;
 };
 
-std::string padLeadingZeros(int number){
+std::string padLeadingZeros(std::string old_str, size_t width){
+    return std::string(width - std::min(width, old_str.length()), '0') + old_str;
+}
+
+std::string padLeadingZeros(int number, int width){
     std::ostringstream ss;
-    ss << std::setw(2) << std::setfill('0') << number;
+    ss << std::setw(width) << std::setfill('0') << number;
     return ss.str();
 }
 
 timeFormat timeGenerate(){
     timeFormat time;
 
-    //std::cout << "Milli Seconds: "<< Simulator::Now().GetMilliSeconds() << std::endl;
-    int millis = floor(Simulator::Now().GetMilliSeconds());
-    time.millis =  padLeadingZeros(millis);
-    //std::cout << "Milli Seconds: "<< time.millis << std::endl;
+    //std::cout << "Micro Seconds: "<< Simulator::Now().GetMicroSeconds() << std::endl;
+    std::string micro = std::to_string(Simulator::Now().GetMicroSeconds());
+    if (micro.length() < 6){
+        micro =  padLeadingZeros(micro, 6);
+    }
+    else if (micro.length() > 6){
+        micro = micro.substr(micro.length() - 6);
+    }
+    time.micro = micro;
 
     //std::cout << "Seconds: "<< Simulator::Now().GetSeconds() << std::endl;
-    int seconds = floor(Simulator::Now().GetSeconds());
-    time.seconds = padLeadingZeros(seconds);
-    //std::cout << "Seconds: "<< time.seconds << std::endl;
+    std::string sec = std::to_string(floor(Simulator::Now().GetSeconds()));
+    if (sec.length() < 2){
+        sec = padLeadingZeros(sec, 2);
+    }
+    else if (sec.length() > 2){
+        sec = sec.substr(sec.length() - 2);
+    }
+    time.seconds = sec;
 
     //std::cout << "Minutes: "<< Simulator::Now().GetMinutes() << std::endl;
-    int minutes = floor(Simulator::Now().GetMinutes());
-    time.minutes  = padLeadingZeros(minutes);
-    //std::cout << "Minutes: "<< time.minutes << std::endl;
+    std::string min = std::to_string(floor(Simulator::Now().GetMinutes()));
+    if (min.length() < 2){
+        min = padLeadingZeros(min, 2);
+    }
+    else if (min.length() > 2){
+        min = min.substr(min.length() - 2);
+    }
+    time.minutes = min;
 
     //std::cout << "Hours: "<< Simulator::Now().GetHours() << std::endl;
-    int hours = floor(Simulator::Now().GetHours());
-    time.hours = padLeadingZeros(hours);
-    //std::cout << "Hours: "<< time.hours << std::endl;
+    std::string hour = std::to_string(floor(Simulator::Now().GetHours()));
+    if (hour.length() < 2){
+        hour = padLeadingZeros(hour, 2);
+    }
+    else if (hour.length() > 2){
+        hour = hour.substr(hour.length() - 2);
+    }
+    time.hours = hour;
 
-    time.timeString = time.hours + ":" + time.minutes + ":" + time.seconds + "." + time.millis;
-    //std::cout << "time string: " << time.timeString << std::endl;
+    // Get the current time
+    auto now = std::chrono::system_clock::now();
+
+    // Convert to time_t, which represents the number of seconds since 1970-01-01 00:00:00 UTC
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+
+    // Convert to a local time
+    std::tm* local_time = std::localtime(&currentTime);
+
+    // Get the year, month, and day from the local time
+    int year = local_time->tm_year + 1900;
+    int month = local_time->tm_mon + 1;
+    int day = local_time->tm_mday;
+
+    time.year = std::to_string (year);
+    time.month = padLeadingZeros(month, 2);
+    time.day = padLeadingZeros(day, 2);
+
+    //Time String
+    time.timeString = time.year + "-" + time.month + "-" + time.day + " " + time.hours + ":" + time.minutes + ":" + time.seconds + "." + time.micro;
+    std::cout << "time string: " << time.timeString << std::endl;
 
     return time;
 }
@@ -228,13 +275,14 @@ static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_
     //std::cout << "Signal= " << signalNoise.signal << " Noise= " << signalNoise.noise << std::endl;
     //std::cout << "channelFreqMhz: " << channelFreqMhz << std::endl;
 
-    wifiVector vector;
-    vector = setWifiVector(txVector);
+    //wifiVector vector;
+    //vector = setWifiVector(txVector);
 
     //std::cout << "ness: " << vector.ness << std::endl;
     //std::cout << "nss: " << vector.nss << std::endl;
     //std::cout << "powerLevel: " << vector.powerLevel << std::endl;
 
+    /*
     packetInfo packetResult = setPacketinfo (packet);
     std::cout << "Packet Size: " << packetResult.size  << std::endl;
     std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
@@ -248,6 +296,8 @@ static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_
     }else{
         std::cout << "Rx Packet Info Record fail!!!" << std::endl;
     }
+
+    */
 
     return;
 }
