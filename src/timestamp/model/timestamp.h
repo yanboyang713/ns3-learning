@@ -26,7 +26,7 @@ class timestamp{
                 std::string padLeadingZeros(std::string, size_t);
                 std::string padLeadingZeros(int, int);
                 void timeStampGenerate();
-
+                void removeAfterDotPosition (std::string *);
         public:
                 timestamp();
                 ~timestamp();

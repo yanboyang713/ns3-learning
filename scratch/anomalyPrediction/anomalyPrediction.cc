@@ -278,12 +278,58 @@ static void PhyTxDropInfo(std::string context, Ptr <const Packet> packet){
     return;
 }
 
-//static void PhyRxDropInfo(std::string context, Ptr <const Packet> packet){
+std::string WifiPhyRxfailureReasonEnumToString(WifiPhyRxfailureReason reason)
+{
+    switch (reason) {
+        case UNKNOWN: return "UNKNOWN";
+        case UNSUPPORTED_SETTINGS: return "UNSUPPORTED_SETTINGS";
+        case CHANNEL_SWITCHING: return "CHANNEL_SWITCHING";
+        case RXING: return "RXING";
+        case TXING: return "TXING";
+        case SLEEPING: return "SLEEPING";
+        case BUSY_DECODING_PREAMBLE: return "BUSY_DECODING_PREAMBLE";
+        case PREAMBLE_DETECT_FAILURE: return "PREAMBLE_DETECT_FAILURE";
+        case RECEPTION_ABORTED_BY_TX: return "RECEPTION_ABORTED_BY_TX";
+        case L_SIG_FAILURE: return "L_SIG_FAILURE";
+        case HT_SIG_FAILURE: return "HT_SIG_FAILURE";
+        case SIG_A_FAILURE: return "SIG_A_FAILURE";
+        case SIG_B_FAILURE: return "SIG_B_FAILURE";
+        case PREAMBLE_DETECTION_PACKET_SWITCH: return "PREAMBLE_DETECTION_PACKET_SWITCH";
+        case FRAME_CAPTURE_PACKET_SWITCH: return "FRAME_CAPTURE_PACKET_SWITCH";
+        case OBSS_PD_CCA_RESET: return "OBSS_PD_CCA_RESET";
+        case HE_TB_PPDU_TOO_LATE: return "HE_TB_PPDU_TOO_LATE";
+        case FILTERED: return "FILTERED";
+        default: return "UNKNOWN";
+    }
+}
+
 static void PhyRxDropInfo(std::string context, Ptr <const Packet> packet, WifiPhyRxfailureReason reason){
-    std::cout << "RX Drop Info" << std::endl;
-    std::cout << context << std::endl;
-    PrintPacketInfo (packet);
-    std::cout << "RX Drop Reason: " << reason << std::endl;
+    //std::cout << "RX Drop Info" << std::endl;
+    std::string type = " PhyRxDropInfo";
+
+    timestamp timestamp;
+
+    //std::cout << "time string: " << timestamp.getTimeString() << std::endl;
+
+    //std::cout << "context: " << context << std::endl;
+    //std::cout << "node Name: " << nodesRecords.getName(contextToNodeId(context)) << std::endl;
+    //std::cout << "node ID: " << contextToNodeId(context) << std::endl;
+
+    packetInfo packetResult = setPacketinfo (packet);
+    //std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    //std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+
+    //std::cout << "RX Drop Reason: " <<  WifiPhyRxfailureReasonEnumToString(reason) << std::endl;
+
+    //database
+    bool succ = dataOutput.PhyRxDropInfoRecord(runID, hostname, type, timestamp.getTimeString(), context,
+                                              nodesRecords.getName(contextToNodeId(context)), contextToNodeId(context),
+                                              packetResult.size, packetResult.UID, WifiPhyRxfailureReasonEnumToString(reason));
+    if (succ == false){
+        std::cout << "Tx Packet Info Record fail!!!" << std::endl;
+    }
+
+
 
     return;
 }
@@ -415,8 +461,8 @@ void anomalyPrediction::ConfigConnect (){
 
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
 
     return;

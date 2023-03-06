@@ -23,6 +23,14 @@ std::string timestamp::getTimeString () const{
     return time.timeString;
 }
 
+void timestamp::removeAfterDotPosition (std::string *time){
+    size_t dot_pos = time->find('.');
+
+    if (dot_pos != std::string::npos) {
+        *time = time->substr(0, dot_pos);
+    }
+}
+
 void timestamp::timeStampGenerate(){
 
     //std::cout << "Micro Seconds: "<< Simulator::Now().GetMicroSeconds() << std::endl;
@@ -39,9 +47,10 @@ void timestamp::timeStampGenerate(){
     }
     time.micro = micro;
 
-    //std::cout << "Seconds: "<< Simulator::Now().GetSeconds() << std::endl;
-    //std::string sec = std::to_string(floor(ns3::Simulator::Now().GetSeconds()));
-    std::string sec = std::to_string(floor(SimulatorCurrentTime.GetSeconds()));
+    //std::cout << "Seconds: "<< ns3::Simulator::Now().GetSeconds() << std::endl;
+    std::string sec = std::to_string(SimulatorCurrentTime.GetSeconds());
+    removeAfterDotPosition(&sec);
+
     if (sec.length() < 2){
         sec = padLeadingZeros(sec, 2);
     }
@@ -49,10 +58,15 @@ void timestamp::timeStampGenerate(){
         sec = sec.substr(sec.length() - 2);
     }
     time.seconds = sec;
+    //std::cout << "time.seconds: " << time.seconds << std::endl;
+
 
     //std::cout << "Minutes: "<< Simulator::Now().GetMinutes() << std::endl;
     //std::string min = std::to_string(floor(ns3::Simulator::Now().GetMinutes()));
-    std::string min = std::to_string(floor(SimulatorCurrentTime.GetMinutes()));
+    std::string min = std::to_string(SimulatorCurrentTime.GetMinutes());
+
+    removeAfterDotPosition(&min);
+
     if (min.length() < 2){
         min = padLeadingZeros(min, 2);
     }
@@ -63,7 +77,9 @@ void timestamp::timeStampGenerate(){
 
     //std::cout << "Hours: "<< Simulator::Now().GetHours() << std::endl;
     //std::string hour = std::to_string(floor(ns3::Simulator::Now().GetHours()));
-    std::string hour = std::to_string(floor(SimulatorCurrentTime.GetHours()));
+    std::string hour = std::to_string(SimulatorCurrentTime.GetHours());
+    removeAfterDotPosition(&hour);
+
     if (hour.length() < 2){
         hour = padLeadingZeros(hour, 2);
     }

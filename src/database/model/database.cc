@@ -228,3 +228,38 @@ bool database::PhyTxDropInfoRecord(std::string runID, char hostname[1024], std::
 
    return true;
 }
+bool database::PhyRxDropInfoRecord(std::string runID, char hostname[1024], std::string type, std::string timeString,
+                                   std::string context, std::string nodeName, uint32_t nodeID, uint32_t packetSize,
+                                   uint64_t packetUID, std::string WifiPhyRxfailureReason){
+    /*
+   std::cout << "Run ID: " << runID << std::endl;
+   std::cout << "Hostname: " << hostname << std::endl;
+   std::cout << "type: " << type << std::endl;
+   std::cout << "timeString: " << timeString << std::endl;
+   std::cout << "context: " << context << std::endl;
+   std::cout << "nodeName: " << nodeName << std::endl;
+   std::cout << "nodeID: " << nodeID << std::endl;
+   std::cout << "packetSize: " << packetSize << std::endl;
+   std::cout << "packetUID: " << packetUID << std::endl;
+   std::cout << " WifiPhyRxfailureReason: " <<  WifiPhyRxfailureReason << std::endl;
+    */
+
+   try {
+      // Create SQL statement
+      std::string sql = "INSERT INTO phyrxdropinfo (runid, hostname, type, time, context, nodename, nodeid, packetsize, packetuid, failurereason) "  \
+         "VALUES (' " + runID + " ', ' " + hostname + " ', ' " + type + " ', ' " + timeString + " ', ' " + context + " ', ' " + nodeName + " ', ' " + std::to_string(nodeID) + " ', ' " + std::to_string(packetSize) + " ', ' " + std::to_string(packetUID) + " ', ' " + WifiPhyRxfailureReason + " ');";
+
+      // Create a transactional object.
+      work W(*conn);
+
+      // Execute SQL query
+      W.exec( sql );
+      W.commit();
+   }
+   catch (const std::exception &e) {
+      std::cerr << "database insert PhyTxDropInfoRecord cerr: " << e.what() << std::endl;
+      return false;
+   }
+
+   return true;
+}
