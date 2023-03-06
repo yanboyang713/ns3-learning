@@ -158,6 +158,7 @@ bool database::TxPacketInfoRecord(std::string runID, char hostname[1024], std::s
                                   std::string context, std::string nodeName, uint32_t nodeID, uint16_t channelFreqMhz,
                                   uint8_t ness, uint8_t nss, uint8_t powerLevel,
                                   uint32_t packetSize, uint64_t packetUID){
+    /*
    std::cout << "Run ID: " << runID << std::endl;
    std::cout << "Hostname: " << hostname << std::endl;
    std::cout << "type: " << type << std::endl;
@@ -171,6 +172,7 @@ bool database::TxPacketInfoRecord(std::string runID, char hostname[1024], std::s
    std::cout << "powerLevel: " << powerLevel << std::endl;
    std::cout << "packetSize: " <<  packetSize << std::endl;
    std::cout << "packetUID: " <<  packetUID << std::endl;
+     */
 
    try {
       // Create SQL statement
@@ -199,6 +201,7 @@ bool database::TxPacketInfoRecord(std::string runID, char hostname[1024], std::s
 bool database::PhyTxDropInfoRecord(std::string runID, char hostname[1024], std::string type, std::string timeString,
                                    std::string context, std::string nodeName, uint32_t nodeID, uint32_t packetSize,
                                    uint64_t packetUID){
+    /*
    std::cout << "Run ID: " << runID << std::endl;
    std::cout << "Hostname: " << hostname << std::endl;
    std::cout << "type: " << type << std::endl;
@@ -208,6 +211,7 @@ bool database::PhyTxDropInfoRecord(std::string runID, char hostname[1024], std::
    std::cout << "nodeID: " << nodeID << std::endl;
    std::cout << "packetSize: " <<  packetSize << std::endl;
    std::cout << "packetUID: " <<  packetUID << std::endl;
+     */
 
    try {
       // Create SQL statement

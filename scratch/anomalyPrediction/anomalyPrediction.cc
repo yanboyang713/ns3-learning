@@ -199,7 +199,7 @@ static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_
                                      contextToNodeId(context), signalNoise.signal, signalNoise.noise, channelFreqMhz,
                                      vector.ness, vector.nss, vector.powerLevel, packetResult.size, packetResult.UID);
     if (succ == false){
-        std::cout << "Rx Packet Info Record fail!!!" << std::endl;
+        std::cout << "RxPacketInfo Record fail!!!" << std::endl;
     }
 
     return;
@@ -237,7 +237,7 @@ static void TxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_
                                               channelFreqMhz, vector.ness, vector.nss, vector.powerLevel,
                                               packetResult.size, packetResult.UID);
     if (succ == false){
-        std::cout << "Tx Packet Info Record fail!!!" << std::endl;
+        std::cout << "TxPacketInfo Record fail!!!" << std::endl;
     }
 
     return;
@@ -252,27 +252,27 @@ static void DequeueTrace(std::string context, Ptr<const WifiMacQueueItem> item){
  */
 
 static void PhyTxDropInfo(std::string context, Ptr <const Packet> packet){
-    std::cout << "TX Drop Info" << std::endl;
+    //std::cout << "TX Drop Info" << std::endl;
     std::string type = " PhyTxDropInfo";
 
     timestamp timestamp;
 
-    std::cout << "time string: " << timestamp.getTimeString() << std::endl;
+    //std::cout << "time string: " << timestamp.getTimeString() << std::endl;
 
-    std::cout << "context: " << context << std::endl;
-    std::cout << "node Name: " << nodesRecords.getName(contextToNodeId(context)) << std::endl;
-    std::cout << "node ID: " << contextToNodeId(context) << std::endl;
+    //std::cout << "context: " << context << std::endl;
+    //std::cout << "node Name: " << nodesRecords.getName(contextToNodeId(context)) << std::endl;
+    //std::cout << "node ID: " << contextToNodeId(context) << std::endl;
 
     packetInfo packetResult = setPacketinfo (packet);
-    std::cout << "Packet Size: " << packetResult.size  << std::endl;
-    std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+    //std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    //std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
 
     //database
     bool succ = dataOutput.PhyTxDropInfoRecord(runID, hostname, type, timestamp.getTimeString(), context,
                                               nodesRecords.getName(contextToNodeId(context)), contextToNodeId(context),
                                               packetResult.size, packetResult.UID);
     if (succ == false){
-        std::cout << "Tx Packet Info Record fail!!!" << std::endl;
+        std::cout << " PhyTxDropInfo Record fail!!!" << std::endl;
     }
 
     return;
@@ -326,7 +326,7 @@ static void PhyRxDropInfo(std::string context, Ptr <const Packet> packet, WifiPh
                                               nodesRecords.getName(contextToNodeId(context)), contextToNodeId(context),
                                               packetResult.size, packetResult.UID, WifiPhyRxfailureReasonEnumToString(reason));
     if (succ == false){
-        std::cout << "Tx Packet Info Record fail!!!" << std::endl;
+        std::cout << "PhyRxDropInfo fail!!!" << std::endl;
     }
 
 
@@ -459,9 +459,9 @@ bool anomalyPrediction::Configure (int argc, char **argv)
 
 void anomalyPrediction::ConfigConnect (){
 
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
     Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
 
