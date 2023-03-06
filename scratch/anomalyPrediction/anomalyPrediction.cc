@@ -1,15 +1,11 @@
 //CXX="clang++" ./ns3 configure --cxx-standard 17
-//./ns3 run "anomalyPrediction --pcap=false --printRoutes=true --numOfUAVs=3 --time=5 --step=1 --EnableMonitor=true --hostname=test"
+//time ./ns3 run "anomalyPrediction --pcap=false --printRoutes=true --numOfUAVs=3 --time=3 --step=1 --EnableMonitor=true --hostname=test --dataRate=1Mbps"
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
 #include <ctime>
 #include <cstdlib>
-//Ceil and Floor functions
-#include <cmath>
-//std::setw() std::setfill()
-#include <iomanip>
-#include <chrono>
+#include "ns3/timestamp.h"
 
 #include "ns3/sha256.h"
 #include "ns3/database.h"
@@ -154,95 +150,6 @@ static void PrintPacketInfo (Ptr <const Packet> packet){
     return;
 }
 
-struct timeFormat {
-    std::string micro;
-    std::string seconds;
-    std::string minutes;
-    std::string hours;
-    std::string year;
-    std::string month;
-    std::string day;
-    std::string timeString;
-};
-
-std::string padLeadingZeros(std::string old_str, size_t width){
-    return std::string(width - std::min(width, old_str.length()), '0') + old_str;
-}
-
-std::string padLeadingZeros(int number, int width){
-    std::ostringstream ss;
-    ss << std::setw(width) << std::setfill('0') << number;
-    return ss.str();
-}
-
-timeFormat timeGenerate(){
-    timeFormat time;
-
-    //std::cout << "Micro Seconds: "<< Simulator::Now().GetMicroSeconds() << std::endl;
-    std::string micro = std::to_string(Simulator::Now().GetMicroSeconds());
-    if (micro.length() < 6){
-        micro =  padLeadingZeros(micro, 6);
-    }
-    else if (micro.length() > 6){
-        micro = micro.substr(micro.length() - 6);
-    }
-    time.micro = micro;
-
-    //std::cout << "Seconds: "<< Simulator::Now().GetSeconds() << std::endl;
-    std::string sec = std::to_string(floor(Simulator::Now().GetSeconds()));
-    if (sec.length() < 2){
-        sec = padLeadingZeros(sec, 2);
-    }
-    else if (sec.length() > 2){
-        sec = sec.substr(sec.length() - 2);
-    }
-    time.seconds = sec;
-
-    //std::cout << "Minutes: "<< Simulator::Now().GetMinutes() << std::endl;
-    std::string min = std::to_string(floor(Simulator::Now().GetMinutes()));
-    if (min.length() < 2){
-        min = padLeadingZeros(min, 2);
-    }
-    else if (min.length() > 2){
-        min = min.substr(min.length() - 2);
-    }
-    time.minutes = min;
-
-    //std::cout << "Hours: "<< Simulator::Now().GetHours() << std::endl;
-    std::string hour = std::to_string(floor(Simulator::Now().GetHours()));
-    if (hour.length() < 2){
-        hour = padLeadingZeros(hour, 2);
-    }
-    else if (hour.length() > 2){
-        hour = hour.substr(hour.length() - 2);
-    }
-    time.hours = hour;
-
-    // Get the current time
-    auto now = std::chrono::system_clock::now();
-
-    // Convert to time_t, which represents the number of seconds since 1970-01-01 00:00:00 UTC
-    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
-
-    // Convert to a local time
-    std::tm* local_time = std::localtime(&currentTime);
-
-    // Get the year, month, and day from the local time
-    int year = local_time->tm_year + 1900;
-    int month = local_time->tm_mon + 1;
-    int day = local_time->tm_mday;
-
-    time.year = std::to_string (year);
-    time.month = padLeadingZeros(month, 2);
-    time.day = padLeadingZeros(day, 2);
-
-    //Time String
-    time.timeString = time.year + "-" + time.month + "-" + time.day + " " + time.hours + ":" + time.minutes + ":" + time.seconds + "." + time.micro;
-    std::cout << "time string: " << time.timeString << std::endl;
-
-    return time;
-}
-
 struct wifiVector {
     uint8_t ness;
     uint8_t nss;
@@ -267,37 +174,33 @@ static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_
     //std::cout << "RX Packet Info" << std::endl;
     std::string type = "RxPacketInfo";
 
-    timeFormat time = timeGenerate();
-    //std::cout << "time string: " << time.timeString << std::endl;
+    timestamp timestamp;
+
+    //std::cout << "time string: " << timestamp.getTimeString() << std::endl;
     //std::cout << "context: " << context << std::endl;
     //std::cout << "node Name: " << nodesRecords.getName(contextToNodeId(context)) << std::endl;
     //std::cout << "node ID: " << contextToNodeId(context) << std::endl;
     //std::cout << "Signal= " << signalNoise.signal << " Noise= " << signalNoise.noise << std::endl;
     //std::cout << "channelFreqMhz: " << channelFreqMhz << std::endl;
 
-    //wifiVector vector;
-    //vector = setWifiVector(txVector);
+    wifiVector vector;
+    vector = setWifiVector(txVector);
 
     //std::cout << "ness: " << vector.ness << std::endl;
     //std::cout << "nss: " << vector.nss << std::endl;
     //std::cout << "powerLevel: " << vector.powerLevel << std::endl;
 
-    /*
     packetInfo packetResult = setPacketinfo (packet);
-    std::cout << "Packet Size: " << packetResult.size  << std::endl;
-    std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+    //std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    //std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
 
 
-    bool succ = dataOutput.RxPacketInfoRecord(runID, hostname, type, time.timeString, context, nodesRecords.getName(contextToNodeId(context)),
+    bool succ = dataOutput.RxPacketInfoRecord(runID, hostname, type, timestamp.getTimeString(), context, nodesRecords.getName(contextToNodeId(context)),
                                      contextToNodeId(context), signalNoise.signal, signalNoise.noise, channelFreqMhz,
                                      vector.ness, vector.nss, vector.powerLevel, packetResult.size, packetResult.UID);
-    if (succ == true){
-        std::cout << "Rx Packet Info Record Success!!!" << std::endl;
-    }else{
+    if (succ == false){
         std::cout << "Rx Packet Info Record fail!!!" << std::endl;
     }
-
-    */
 
     return;
 }
@@ -463,7 +366,7 @@ bool anomalyPrediction::Configure (int argc, char **argv)
 
 void anomalyPrediction::ConfigConnect (){
 
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
