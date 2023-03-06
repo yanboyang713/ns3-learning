@@ -208,9 +208,37 @@ static void RxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_
 static void TxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_t channelFreqMhz,
                          WifiTxVector txVector, MpduInfo aMpdu, uint16_t staId){
 
-    std::cout << "TX Packet Info" << std::endl;
-    std::cout << context << std::endl;
-    PrintPacketInfo (packet);
+    //std::cout << "TX Packet Info" << std::endl;
+    std::string type = "TxPacketInfo";
+
+    timestamp timestamp;
+
+    //std::cout << "time string: " << timestamp.getTimeString() << std::endl;
+
+    //std::cout << context << std::endl;
+    //std::cout << "node Name: " << nodesRecords.getName(contextToNodeId(context)) << std::endl;
+    //std::cout << "node ID: " << contextToNodeId(context) << std::endl;
+    //std::cout << "channelFreqMhz: " << channelFreqMhz << std::endl;
+
+    wifiVector vector;
+    vector = setWifiVector(txVector);
+
+    //std::cout << "ness: " << vector.ness << std::endl;
+    //std::cout << "nss: " << vector.nss << std::endl;
+    //std::cout << "powerLevel: " << vector.powerLevel << std::endl;
+
+    packetInfo packetResult = setPacketinfo (packet);
+    //std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    //std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+
+    //database
+    bool succ = dataOutput.TxPacketInfoRecord(runID, hostname, type, timestamp.getTimeString(), context,
+                                              nodesRecords.getName(contextToNodeId(context)), contextToNodeId(context),
+                                              channelFreqMhz, vector.ness, vector.nss, vector.powerLevel,
+                                              packetResult.size, packetResult.UID);
+    if (succ == false){
+        std::cout << "Tx Packet Info Record fail!!!" << std::endl;
+    }
 
     return;
 }
@@ -367,7 +395,7 @@ bool anomalyPrediction::Configure (int argc, char **argv)
 void anomalyPrediction::ConfigConnect (){
 
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));

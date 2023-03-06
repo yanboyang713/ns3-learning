@@ -26,7 +26,11 @@ std::string timestamp::getTimeString () const{
 void timestamp::timeStampGenerate(){
 
     //std::cout << "Micro Seconds: "<< Simulator::Now().GetMicroSeconds() << std::endl;
-    std::string micro = std::to_string(ns3::Simulator::Now().GetMicroSeconds());
+
+    ns3::Time SimulatorCurrentTime = ns3::Simulator::Now();
+
+    //std::string micro = std::to_string(ns3::Simulator::Now().GetMicroSeconds());
+    std::string micro = std::to_string(SimulatorCurrentTime.GetMicroSeconds());
     if (micro.length() < 6){
         micro =  padLeadingZeros(micro, 6);
     }
@@ -36,7 +40,8 @@ void timestamp::timeStampGenerate(){
     time.micro = micro;
 
     //std::cout << "Seconds: "<< Simulator::Now().GetSeconds() << std::endl;
-    std::string sec = std::to_string(floor(ns3::Simulator::Now().GetSeconds()));
+    //std::string sec = std::to_string(floor(ns3::Simulator::Now().GetSeconds()));
+    std::string sec = std::to_string(floor(SimulatorCurrentTime.GetSeconds()));
     if (sec.length() < 2){
         sec = padLeadingZeros(sec, 2);
     }
@@ -46,7 +51,8 @@ void timestamp::timeStampGenerate(){
     time.seconds = sec;
 
     //std::cout << "Minutes: "<< Simulator::Now().GetMinutes() << std::endl;
-    std::string min = std::to_string(floor(ns3::Simulator::Now().GetMinutes()));
+    //std::string min = std::to_string(floor(ns3::Simulator::Now().GetMinutes()));
+    std::string min = std::to_string(floor(SimulatorCurrentTime.GetMinutes()));
     if (min.length() < 2){
         min = padLeadingZeros(min, 2);
     }
@@ -56,7 +62,8 @@ void timestamp::timeStampGenerate(){
     time.minutes = min;
 
     //std::cout << "Hours: "<< Simulator::Now().GetHours() << std::endl;
-    std::string hour = std::to_string(floor(ns3::Simulator::Now().GetHours()));
+    //std::string hour = std::to_string(floor(ns3::Simulator::Now().GetHours()));
+    std::string hour = std::to_string(floor(SimulatorCurrentTime.GetHours()));
     if (hour.length() < 2){
         hour = padLeadingZeros(hour, 2);
     }
