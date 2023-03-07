@@ -23,6 +23,9 @@
 #include "ns3/flow-monitor-module.h"
 #include "ns3/wifi-mac-queue.h"
 
+#include "ns3/propagation-loss-model.h"
+#include "ns3/propagation-delay-model.h"
+
 using namespace ns3;
 
 //global vars
@@ -34,6 +37,16 @@ database dataOutput;
 std::string runID;
 // Host Name
 char hostname[1024];
+//Create propagation loss matrix
+Ptr<MatrixPropagationLossModel> lossModel = CreateObject<MatrixPropagationLossModel>();
+
+NodeContainer UAVs;
+
+WifiMacHelper wifiMac;
+
+YansWifiPhyHelper wifiPhy;
+
+Ptr<YansWifiChannel> wifiChannel = CreateObject<YansWifiChannel>();
 
 class anomalyPrediction{
     public:
@@ -81,7 +94,7 @@ class anomalyPrediction{
         uint16_t port;
 
         // UAVs network
-        NodeContainer UAVs;
+        //NodeContainer UAVs;
         NetDeviceContainer UAVdevices;
         Ipv4InterfaceContainer UAVinterfaces;
 
@@ -90,7 +103,6 @@ class anomalyPrediction{
         NetDeviceContainer groundStationDevice;
         Ipv4InterfaceContainer groundStationInterface;
 
-        //FlowMonitor
 
         // Create the nodes
         void CreateNodes ();
@@ -459,14 +471,26 @@ bool anomalyPrediction::Configure (int argc, char **argv)
 
 void anomalyPrediction::ConfigConnect (){
 
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
 
     return;
 }
+
+//static void setLoss(ns3::NodeContainer *UAVs) {
+static void setLoss() {
+    std::cout << "Function called at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+
+    lossModel->SetLoss(UAVs.Get(0)->GetObject<MobilityModel>(),
+                       UAVs.Get(1)->GetObject<MobilityModel>(),
+                       200, true); // set symmetric loss 0 <-> 1 to 200 dB (no link)
+
+    return;
+}
+
 void anomalyPrediction::Run (){
 
     RunRecord ();
@@ -485,7 +509,12 @@ void anomalyPrediction::Run (){
     FlowMonitorHelper flowmon;
     Ptr<FlowMonitor> monitor = flowmon.InstallAll();
 
+    int arg1 = 123;
+    //Simulator::Schedule(Seconds(2.0), &setLoss, &UAVs);
+    Simulator::Schedule(Seconds(2.0), &setLoss);
+
     Simulator::Run ();
+
 
     if (enableFlowMonitor == true)
         ShowFlowMonitor (flowmon, monitor);
@@ -564,49 +593,18 @@ void anomalyPrediction::SetMobilityModel () {
     return;
 }
 void anomalyPrediction::CreateDevices () {
-    WifiMacHelper wifiMac;
     wifiMac.SetType ("ns3::AdhocWifiMac");
 
-    YansWifiPhyHelper wifiPhy;
-    //YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
-    YansWifiChannelHelper wifiChannel;
-    wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
-    if (frequency == 6){
-        // Reference Loss for Friss at 1 m with 6.0 GHz
-        wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel",
-                                       "Exponent",
-                                       DoubleValue(2.0),
-                                       "ReferenceDistance",
-                                       DoubleValue(1.0),
-                                       "ReferenceLoss",
-                                       DoubleValue(49.013));
-    } else if (frequency == 5){
-        // Reference Loss for Friss at 1 m with 5.15 GHz
-        wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel",
-                                       "Exponent",
-                                       DoubleValue(2.0),
-                                       "ReferenceDistance",
-                                       DoubleValue(1.0),
-                                       "ReferenceLoss",
-                                       DoubleValue(46.6777)
-);
 
-    } else {
-        // Reference Loss for Friss at 1 m with 2.4 GHz
-        wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel",
-                                       "Exponent",
-                                       DoubleValue(2.0),
-                                       "ReferenceDistance",
-                                       DoubleValue(1.0),
-                                       "ReferenceLoss",
-                                       DoubleValue(40.046));
-    }
+    lossModel->SetDefaultLoss(0); // set default loss to 200 dB (no link)
 
-    wifiPhy.SetChannel (wifiChannel.Create ());
+    wifiChannel->SetPropagationLossModel(lossModel);
+    wifiChannel->SetPropagationDelayModel(CreateObject<ConstantSpeedPropagationDelayModel>());
+
+    wifiPhy.SetChannel(wifiChannel);
     wifiPhy.Set ("Antennas", UintegerValue (4));
     wifiPhy.Set ("MaxSupportedTxSpatialStreams", UintegerValue (4));
     wifiPhy.Set ("MaxSupportedRxSpatialStreams", UintegerValue (4));
-
 
     WifiStandard wifiStandard;
     if (standard == "11a")
