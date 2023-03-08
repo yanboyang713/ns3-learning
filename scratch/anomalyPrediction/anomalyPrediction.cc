@@ -40,7 +40,16 @@ char hostname[1024];
 //Create propagation loss matrix
 Ptr<MatrixPropagationLossModel> lossModel = CreateObject<MatrixPropagationLossModel>();
 
+// UAVs network
+//NodeContainer UAVs;
 NodeContainer UAVs;
+NetDeviceContainer UAVdevices;
+Ipv4InterfaceContainer UAVinterfaces;
+
+//Ground Station
+NodeContainer groundStation;
+NetDeviceContainer groundStationDevice;
+Ipv4InterfaceContainer groundStationInterface;
 
 WifiMacHelper wifiMac;
 
@@ -93,15 +102,6 @@ class anomalyPrediction{
         // Discard port (RFC 863)
         uint16_t port;
 
-        // UAVs network
-        //NodeContainer UAVs;
-        NetDeviceContainer UAVdevices;
-        Ipv4InterfaceContainer UAVinterfaces;
-
-        //Ground Station
-        NodeContainer groundStation;
-        NetDeviceContainer groundStationDevice;
-        Ipv4InterfaceContainer groundStationInterface;
 
 
         // Create the nodes
@@ -473,8 +473,8 @@ void anomalyPrediction::ConfigConnect (){
 
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
 
     return;
@@ -483,10 +483,23 @@ void anomalyPrediction::ConfigConnect (){
 //static void setLoss(ns3::NodeContainer *UAVs) {
 static void setLoss() {
     std::cout << "Function called at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+/*
+    //ns-3 examples/wireless/power-adaptation-distance.cc
+    Ptr<NetDevice> device = wifiNetDevices.Get(i);
+    Ptr<WifiNetDevice> wifiDevice = DynamicCast<WifiNetDevice> (device);
+    Ptr<YansWifiPhy> phy = DynamicCast<YansWifiPhy>(wifiDevice->GetPhy());
+    phy->SetTxPowerStart(20);
+    phy->SetTxPowerEnd(20);
 
+    // set symmetric loss 0 <-> 1 to 200 dB (no link)
     lossModel->SetLoss(UAVs.Get(0)->GetObject<MobilityModel>(),
                        UAVs.Get(1)->GetObject<MobilityModel>(),
-                       200, true); // set symmetric loss 0 <-> 1 to 200 dB (no link)
+                       200, true);
+
+    wifiChannel->SetPropagationLossModel(lossModel);
+
+    wifiPhy.SetChannel(wifiChannel);
+ */
 
     return;
 }
@@ -509,9 +522,7 @@ void anomalyPrediction::Run (){
     FlowMonitorHelper flowmon;
     Ptr<FlowMonitor> monitor = flowmon.InstallAll();
 
-    int arg1 = 123;
-    //Simulator::Schedule(Seconds(2.0), &setLoss, &UAVs);
-    Simulator::Schedule(Seconds(2.0), &setLoss);
+    //Simulator::Schedule(Seconds(2.0), &setLoss);
 
     Simulator::Run ();
 
@@ -596,7 +607,7 @@ void anomalyPrediction::CreateDevices () {
     wifiMac.SetType ("ns3::AdhocWifiMac");
 
 
-    lossModel->SetDefaultLoss(0); // set default loss to 200 dB (no link)
+    lossModel->SetDefaultLoss(200); // set default loss to 200 dB (no link)
 
     wifiChannel->SetPropagationLossModel(lossModel);
     wifiChannel->SetPropagationDelayModel(CreateObject<ConstantSpeedPropagationDelayModel>());
