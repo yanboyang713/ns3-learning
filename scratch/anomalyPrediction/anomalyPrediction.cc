@@ -16,6 +16,11 @@
 #include "ns3/internet-module.h"
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/mobility-module.h"
+//#include "ns3/wifi-mac-queue-item.h"
+//#include "ns3/wifi-mac-queue.h"
+//#include "ns3/wifi-mac-header.h"
+//#include "ns3/wifi-mac.h"
+//#include "ns3/wifi-mac-queue-item.h"
 
 #include "ns3/on-off-helper.h"
 #include "ns3/packet-sink-helper.h"
@@ -254,14 +259,15 @@ static void TxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_
 
     return;
 }
-/*
-static void DequeueTrace(std::string context, Ptr<const WifiMacQueueItem> item){
-    double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
-    std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
+
+static void DequeueTrace(std::string context, Ptr<const WifiMpdu> item){
+    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
+    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
+    std::cout << "context: " << context << std::endl;
+    std::cout << "time: " << Simulator::Now() << std::endl;
 
     return;
 }
- */
 
 static void PhyTxDropInfo(std::string context, Ptr <const Packet> packet){
     //std::cout << "TX Drop Info" << std::endl;
@@ -473,10 +479,12 @@ void anomalyPrediction::ConfigConnect (){
 
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
 
+    // "/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue"
+    // "/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue"
     return;
 }
 
@@ -491,6 +499,7 @@ static void setLoss() {
     phy->SetTxPowerStart(20);
     phy->SetTxPowerEnd(20);
 
+ */
     // set symmetric loss 0 <-> 1 to 200 dB (no link)
     lossModel->SetLoss(UAVs.Get(0)->GetObject<MobilityModel>(),
                        UAVs.Get(1)->GetObject<MobilityModel>(),
@@ -499,7 +508,6 @@ static void setLoss() {
     wifiChannel->SetPropagationLossModel(lossModel);
 
     wifiPhy.SetChannel(wifiChannel);
- */
 
     return;
 }
@@ -607,7 +615,7 @@ void anomalyPrediction::CreateDevices () {
     wifiMac.SetType ("ns3::AdhocWifiMac");
 
 
-    lossModel->SetDefaultLoss(200); // set default loss to 200 dB (no link)
+    lossModel->SetDefaultLoss(0); // set default loss to 200 dB (no link)
 
     wifiChannel->SetPropagationLossModel(lossModel);
     wifiChannel->SetPropagationDelayModel(CreateObject<ConstantSpeedPropagationDelayModel>());
