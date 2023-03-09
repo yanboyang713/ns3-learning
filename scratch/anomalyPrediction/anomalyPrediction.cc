@@ -266,6 +266,62 @@ static void DequeueTrace(std::string context, Ptr<const WifiMpdu> item){
     std::cout << "context: " << context << std::endl;
     std::cout << "time: " << Simulator::Now() << std::endl;
 
+    packetInfo packetResult = setPacketinfo (item->GetPacket());
+    std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+
+    return;
+}
+
+static void DropBeforeEnqueueTrace(std::string context, Ptr<const WifiMpdu> item){
+    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
+    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
+    std::cout << "context: " << context << std::endl;
+    std::cout << "time: " << Simulator::Now() << std::endl;
+
+    packetInfo packetResult = setPacketinfo (item->GetPacket());
+    std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+
+    return;
+}
+
+static void DropAfterDequeueTrace(std::string context, Ptr<const WifiMpdu> item){
+    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
+    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
+    std::cout << "context: " << context << std::endl;
+    std::cout << "time: " << Simulator::Now() << std::endl;
+
+    packetInfo packetResult = setPacketinfo (item->GetPacket());
+    std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+
+    return;
+}
+
+static void EnqueueTrace(std::string context, Ptr<const WifiMpdu> item){
+    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
+    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
+    std::cout << "context: " << context << std::endl;
+    std::cout << "time: " << Simulator::Now() << std::endl;
+
+    packetInfo packetResult = setPacketinfo (item->GetPacket());
+    std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+
+    return;
+}
+
+static void DropTrace(std::string context, Ptr<const WifiMpdu> item){
+    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
+    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
+    std::cout << "context: " << context << std::endl;
+    std::cout << "time: " << Simulator::Now() << std::endl;
+
+    packetInfo packetResult = setPacketinfo (item->GetPacket());
+    std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+
     return;
 }
 
@@ -482,9 +538,11 @@ void anomalyPrediction::ConfigConnect (){
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Enqueue", MakeCallback(&EnqueueTrace));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Drop", MakeCallback(&DropTrace));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/DropBeforeEnqueue", MakeCallback(&DropBeforeEnqueueTrace));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/DropAfterDequeue", MakeCallback(&DropAfterDequeueTrace));
 
-    // "/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue"
-    // "/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/MacEntities/*/$ns3::OcbWifiMac/*/Queue/Dequeue"
     return;
 }
 
@@ -530,7 +588,7 @@ void anomalyPrediction::Run (){
     FlowMonitorHelper flowmon;
     Ptr<FlowMonitor> monitor = flowmon.InstallAll();
 
-    //Simulator::Schedule(Seconds(2.0), &setLoss);
+    Simulator::Schedule(Seconds(2.0), &setLoss);
 
     Simulator::Run ();
 
