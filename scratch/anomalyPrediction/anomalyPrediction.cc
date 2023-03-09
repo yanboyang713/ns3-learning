@@ -261,8 +261,6 @@ static void TxPacketInfo(std::string context, Ptr <const Packet> packet, uint16_
 }
 
 static void DequeueTrace(std::string context, Ptr<const WifiMpdu> item){
-    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
-    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
     std::cout << "context: " << context << std::endl;
     std::cout << "time: " << Simulator::Now() << std::endl;
 
@@ -274,8 +272,6 @@ static void DequeueTrace(std::string context, Ptr<const WifiMpdu> item){
 }
 
 static void DropBeforeEnqueueTrace(std::string context, Ptr<const WifiMpdu> item){
-    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
-    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
     std::cout << "context: " << context << std::endl;
     std::cout << "time: " << Simulator::Now() << std::endl;
 
@@ -287,8 +283,6 @@ static void DropBeforeEnqueueTrace(std::string context, Ptr<const WifiMpdu> item
 }
 
 static void DropAfterDequeueTrace(std::string context, Ptr<const WifiMpdu> item){
-    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
-    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
     std::cout << "context: " << context << std::endl;
     std::cout << "time: " << Simulator::Now() << std::endl;
 
@@ -300,8 +294,6 @@ static void DropAfterDequeueTrace(std::string context, Ptr<const WifiMpdu> item)
 }
 
 static void EnqueueTrace(std::string context, Ptr<const WifiMpdu> item){
-    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
-    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
     std::cout << "context: " << context << std::endl;
     std::cout << "time: " << Simulator::Now() << std::endl;
 
@@ -312,15 +304,31 @@ static void EnqueueTrace(std::string context, Ptr<const WifiMpdu> item){
     return;
 }
 
-static void DropTrace(std::string context, Ptr<const WifiMpdu> item){
-    //double QueuingDelay = Simulator::Now() - item->GetTimeStamp();
-    //std::cout << "QueuingDelay: " << QueuingDelay << std::endl;
-    std::cout << "context: " << context << std::endl;
-    std::cout << "time: " << Simulator::Now() << std::endl;
+static void QueueDropTrace(std::string context, Ptr<const WifiMpdu> item){
+    //std::cout << "Queue Drop Info" << std::endl;
+    std::string type = "QueueDropInfo";
+
+    timestamp timestamp;
+
+    //std::cout << "time string: " << timestamp.getTimeString() << std::endl;
+
+    //std::cout << "context: " << context << std::endl;
+
+    //std::cout << "node Name: " << nodesRecords.getName(contextToNodeId(context)) << std::endl;
+    //std::cout << "node ID: " << contextToNodeId(context) << std::endl;
 
     packetInfo packetResult = setPacketinfo (item->GetPacket());
-    std::cout << "Packet Size: " << packetResult.size  << std::endl;
-    std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+    //std::cout << "Packet Size: " << packetResult.size  << std::endl;
+    //std::cout << "Packet UID: " <<  packetResult.UID << std::endl;
+
+    //database
+    bool succ = dataOutput.QueueDropInfoRecord(runID, hostname, type, timestamp.getTimeString(), context,
+                                              nodesRecords.getName(contextToNodeId(context)), contextToNodeId(context),
+                                              packetResult.size, packetResult.UID);
+
+    if (succ == false){
+        std::cout << " Queue Drop Info Record fail!!!" << std::endl;
+    }
 
     return;
 }
@@ -539,14 +547,13 @@ void anomalyPrediction::ConfigConnect (){
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Enqueue", MakeCallback(&EnqueueTrace));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Drop", MakeCallback(&DropTrace));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Drop", MakeCallback(&QueueDropTrace));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/DropBeforeEnqueue", MakeCallback(&DropBeforeEnqueueTrace));
-    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/DropAfterDequeue", MakeCallback(&DropAfterDequeueTrace));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/DropAfterDequeue", MakeCallback(&DropAfterDequeueTrace));
 
     return;
 }
 
-//static void setLoss(ns3::NodeContainer *UAVs) {
 static void setLoss() {
     std::cout << "Function called at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
 /*
@@ -669,6 +676,7 @@ void anomalyPrediction::SetMobilityModel () {
 
     return;
 }
+
 void anomalyPrediction::CreateDevices () {
     wifiMac.SetType ("ns3::AdhocWifiMac");
 
@@ -762,7 +770,6 @@ void anomalyPrediction::CreateDevices () {
                                   "ControlMode", StringValue (controlMode )
                                 );
 
-
     UAVdevices = wifi.Install (wifiPhy, wifiMac, UAVs);
     groundStationDevice = wifi.Install (wifiPhy, wifiMac, groundStation);
 
@@ -815,6 +822,7 @@ void anomalyPrediction::SetRouting (Ipv4StaticRoutingHelper &staticRouting){
             UAVsUplinkStaticRouting->AddHostRouteTo (UAVinterfaces.GetAddress(n), UAVinterfaces.GetAddress(m+1), 1);
         }
     }
+
     //UAV downlink
     for (int m = numOfUAVs - 1; m >= 0; m--){
         Ptr<Ipv4> UAVobject = UAVs.Get (m)->GetObject<Ipv4> ();
