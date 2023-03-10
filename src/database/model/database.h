@@ -34,7 +34,8 @@ class database{
                                  uint64_t);
         bool PhyRxDropInfoRecord(std::string, char [1024], std::string, std::string, std::string, std::string, uint32_t, uint32_t,
                                  uint64_t, std::string);
-
+        bool QueueDropInfoRecord(std::string, char [1024], std::string, std::string, std::string, std::string, uint32_t,
+                                 uint32_t, uint64_t);
 
 };
 #endif

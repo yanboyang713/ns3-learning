@@ -310,7 +310,7 @@ static void QueueDropTrace(std::string context, Ptr<const WifiMpdu> item){
 
     timestamp timestamp;
 
-    //std::cout << "time string: " << timestamp.getTimeString() << std::endl;
+    std::cout << "time string: " << timestamp.getTimeString() << std::endl;
 
     //std::cout << "context: " << context << std::endl;
 
@@ -327,7 +327,7 @@ static void QueueDropTrace(std::string context, Ptr<const WifiMpdu> item){
                                               packetResult.size, packetResult.UID);
 
     if (succ == false){
-        std::cout << " Queue Drop Info Record fail!!!" << std::endl;
+        std::cout << "Queue Drop Info Record fail!!!" << std::endl;
     }
 
     return;
@@ -541,13 +541,13 @@ bool anomalyPrediction::Configure (int argc, char **argv)
 
 void anomalyPrediction::ConfigConnect (){
 
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferRx", MakeCallback (&RxPacketInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/MonitorSnifferTx", MakeCallback (&TxPacketInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&PhyTxDropInfo));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&PhyRxDropInfo));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Dequeue", MakeCallback(&DequeueTrace));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Enqueue", MakeCallback(&EnqueueTrace));
-    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Drop", MakeCallback(&QueueDropTrace));
+    Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/Drop", MakeCallback(&QueueDropTrace));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/DropBeforeEnqueue", MakeCallback(&DropBeforeEnqueueTrace));
     //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/*/Queue/DropAfterDequeue", MakeCallback(&DropAfterDequeueTrace));
 

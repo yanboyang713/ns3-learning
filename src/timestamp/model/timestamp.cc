@@ -32,11 +32,9 @@ void timestamp::removeAfterDotPosition (std::string *time){
 }
 
 void timestamp::timeStampGenerate(){
-
-    //std::cout << "Micro Seconds: "<< Simulator::Now().GetMicroSeconds() << std::endl;
-
     ns3::Time SimulatorCurrentTime = ns3::Simulator::Now();
 
+    //std::cout << "Micro Seconds: "<< ns3::Simulator::Now().GetMicroSeconds() << std::endl;
     //std::string micro = std::to_string(ns3::Simulator::Now().GetMicroSeconds());
     std::string micro = std::to_string(SimulatorCurrentTime.GetMicroSeconds());
     if (micro.length() < 6){
@@ -46,6 +44,7 @@ void timestamp::timeStampGenerate(){
         micro = micro.substr(micro.length() - 6);
     }
     time.micro = micro;
+    //std::cout << "time.micro: " << time.micro << std::endl;
 
     //std::cout << "Seconds: "<< ns3::Simulator::Now().GetSeconds() << std::endl;
     std::string sec = std::to_string(SimulatorCurrentTime.GetSeconds());

@@ -276,7 +276,9 @@ bool database::QueueDropInfoRecord(std::string runID, char hostname[1024], std::
    std::cout << "Run ID: " << runID << std::endl;
    std::cout << "Hostname: " << hostname << std::endl;
    std::cout << "type: " << type << std::endl;
+     */
    std::cout << "timeString: " << timeString << std::endl;
+    /*
    std::cout << "context: " << context << std::endl;
    std::cout << "nodeName: " << nodeName << std::endl;
    std::cout << "nodeID: " << nodeID << std::endl;
